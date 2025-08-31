@@ -1,0 +1,96 @@
+version: '3.8'
+
+services:
+  # MySQL Database
+  mysql:
+    image: mysql:8.0
+    container_name: owasp_mysql_dev
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: wallet_app
+      MYSQL_USER: wallet_user
+      MYSQL_PASSWORD: wallet_pass
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data_dev:/var/lib/mysql
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - owasp_network_dev
+
+  # MongoDB Database
+  mongodb:
+    image: mongo:7.0
+    container_name: owasp_mongodb_dev
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: adminpass
+      MONGO_INITDB_DATABASE: wallet_app
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data_dev:/data/db
+    networks:
+      - owasp_network_dev
+
+  # Redis Cache
+  redis:
+    image: redis:7.2-alpine
+    container_name: owasp_redis_dev
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data_dev:/data
+    networks:
+      - owasp_network_dev
+
+  # Backend Application (Python FastAPI) - Development
+  backend:
+    build: .
+    container_name: owasp_backend_dev
+    restart: unless-stopped
+    ports:
+      - "8080:8000"
+    env_file:
+      - .env
+    volumes:
+      - .:/app
+    command: uvicorn src.app.main:app --host 0.0.0.0 --port 8000 --reload
+    depends_on:
+      - mysql
+      - mongodb
+      - redis
+    networks:
+      - owasp_network_dev
+
+  # Frontend Application (Node.js Vue.js) - Development
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: owasp_frontend_dev
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - VITE_API_BASE_URL=http://localhost:8080/api
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+    networks:
+      - owasp_network_dev
+
+volumes:
+  mysql_data_dev:
+  mongodb_data_dev:
+  redis_data_dev:
+
+networks:
+  owasp_network_dev:
+    driver: bridge
