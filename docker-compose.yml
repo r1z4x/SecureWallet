@@ -4,13 +4,13 @@ services:
   # MySQL Database
   mysql:
     image: mysql:8.0
-    container_name: owasp_mysql
+    container_name: securewallet_mysql
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: wallet_app
-      MYSQL_USER: wallet_user
-      MYSQL_PASSWORD: wallet_pass
+      MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_DATABASE: securewallet
+      MYSQL_USER: securewallet
+      MYSQL_PASSWORD: securewalletpass
     ports:
       - "3306:3306"
     volumes:
@@ -23,12 +23,12 @@ services:
       retries: 5
       start_period: 30s
     networks:
-      - owasp_network
+      - securewallet_network
 
   # MongoDB Database
   mongodb:
     image: mongo:7.0
-    container_name: owasp_mongodb
+    container_name: securewallet_mongodb
     restart: unless-stopped
     environment:
       MONGO_INITDB_ROOT_USERNAME: admin
@@ -39,27 +39,27 @@ services:
     volumes:
       - mongodb_data:/data/db
     networks:
-      - owasp_network
+      - securewallet_network
 
   # Redis Cache
   redis:
     image: redis:7.2-alpine
-    container_name: owasp_redis
+    container_name: securewallet_redis
     restart: unless-stopped
     ports:
       - "6379:6379"
     volumes:
       - redis_data:/data
     networks:
-      - owasp_network
+      - securewallet_network
 
   # Backend Application (Python FastAPI)
   backend:
     build: .
-    container_name: owasp_backend
+    container_name: securewallet_backend
     restart: unless-stopped
     ports:
-      - "8080:8000"
+      - "8000:8000"
     env_file:
       - .env
     volumes:
@@ -78,12 +78,12 @@ services:
       retries: 3
       start_period: 40s
     networks:
-      - owasp_network
+      - securewallet_network
 
   # Frontend Application (Node.js Vue.js)
   frontend:
     build: ./frontend
-    container_name: owasp_frontend
+    container_name: securewallet_frontend
     restart: unless-stopped
     ports:
       - "3000:3000"
@@ -94,7 +94,7 @@ services:
       backend:
         condition: service_healthy
     networks:
-      - owasp_network
+      - securewallet_network
 
 volumes:
   mysql_data:
@@ -102,5 +102,5 @@ volumes:
   redis_data:
 
 networks:
-  owasp_network:
+  securewallet_network:
     driver: bridge

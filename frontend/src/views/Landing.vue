@@ -6,7 +6,7 @@
         <div class="flex justify-between items-center py-6">
           <div class="flex items-center">
             <i class="fas fa-wallet text-primary-600 text-3xl mr-3"></i>
-            <h1 class="text-2xl font-bold text-gray-900">SecureWallet</h1>
+            <h1 class="text-2xl font-bold text-gray-900">SecureWallet <sup class="text-red-500 text-xs">(Vulnerable)</sup></h1>
           </div>
           <div class="flex space-x-4">
             <router-link to="/auth/login" class="btn-primary">
@@ -26,7 +26,7 @@
         <div class="mb-12">
           <i class="fas fa-wallet text-primary-600 text-8xl mb-8"></i>
           <h1 class="text-5xl font-bold text-gray-900 mb-6">
-            Welcome to SecureWallet
+            Welcome to SecureWallet <sup class="text-red-500 text-xs">(Vulnerable)</sup>
           </h1>
           <p class="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
             Your secure digital wallet for fast and reliable transactions. 

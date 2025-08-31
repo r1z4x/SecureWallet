@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# OWASP-WSTG-Vulnerable-App Startup Script
+# SecureWallet - Digital Banking Platform (Vulnerable) Startup Script
 # This script helps you start the vulnerable application safely
 
-echo "🚨 OWASP-WSTG-Vulnerable-App Startup Script"
-echo "=============================================="
+echo "🚨 SecureWallet - Digital Banking Platform (Vulnerable) Startup Script"
 echo ""
+
 echo "⚠️  WARNING: This application is intentionally vulnerable!"
 echo "   Only use in controlled, isolated environments."
 echo "   Never deploy on public networks."
@@ -28,14 +28,14 @@ echo ""
 
 # Ask for confirmation
 read -p "Do you want to start the vulnerable application? (y/N): " -n 1 -r
-echo ""
+echo
 if [[ ! $REPLY =~ ^[Yy]$ ]]; then
     echo "❌ Startup cancelled."
     exit 0
 fi
 
 echo ""
-echo "🚀 Starting OWASP-WSTG-Vulnerable-App..."
+echo "🚀 Starting SecureWallet - Digital Banking Platform (Vulnerable)..."
 echo ""
 
 # Start the application
@@ -50,10 +50,10 @@ if docker-compose ps | grep -q "Up"; then
     echo ""
     echo "✅ Application started successfully!"
     echo ""
-    echo "📋 Access URLs:"
+    echo "🌐 Access Points:"
     echo "   • API Documentation: http://localhost:8000/docs"
     echo "   • Application: http://localhost:8000"
-    echo "   • Health Check: http://localhost:8000/health"
+    echo "   • Frontend: http://localhost:3000"
     echo "   • API Info: http://localhost:8000/api/info"
     echo ""
     echo "🔑 Default Credentials:"
@@ -66,12 +66,7 @@ if docker-compose ps | grep -q "Up"; then
     echo "📚 Testing Examples:"
     echo "   • SQL Injection: curl 'http://localhost:8000/api/vulnerabilities/sql-injection/basic/user-search?username=admin'"
     echo "   • XSS: curl 'http://localhost:8000/api/vulnerabilities/xss/basic/reflected?user_input=<script>alert(1)</script>'"
-    echo ""
-    echo "🛑 To stop the application:"
-    echo "   docker-compose down"
-    echo ""
 else
-    echo "❌ Failed to start application. Check logs with:"
-    echo "   docker-compose logs"
+    echo "❌ Failed to start application. Check docker-compose logs for details."
     exit 1
 fi

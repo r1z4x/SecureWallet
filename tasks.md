@@ -243,7 +243,7 @@
 
 ## Project Status: ✅ COMPLETE
 
-The OWASP-WSTG-Vulnerable-App is now fully implemented with all core features and vulnerability categories as specified in the requirements. The application provides a comprehensive platform for learning and testing web application security vulnerabilities across multiple difficulty levels.
+The SecureWallet - Digital Banking Platform (Vulnerable) is now fully implemented with all core features and vulnerability categories as specified in the requirements. The application provides a comprehensive platform for learning and testing web application security vulnerabilities across multiple difficulty levels.
 
 ### Key Achievements:
 - ✅ **100+ Vulnerabilities** implemented across OWASP Top 10 categories

@@ -1,7 +1,7 @@
 {
-  "name": "securewallet-frontend",
+  "name": "securewallet-vulnerable-frontend",
   "version": "1.0.0",
-  "description": "SecureWallet Frontend - Vue.js Application",
+  "description": "SecureWallet - Digital Banking Platform (Vulnerable) Frontend - Vue.js Application",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -9,7 +9,7 @@
     "preview": "vite preview",
     "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs --fix --ignore-path .gitignore"
   },
-  "keywords": ["vue", "vite", "tailwindcss", "banking", "wallet"],
+  "keywords": ["vue", "vite", "tailwindcss", "banking", "wallet", "vulnerable", "security", "owasp"],
   "author": "SecureWallet Team",
   "license": "MIT",
   "dependencies": {

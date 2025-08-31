@@ -8,11 +8,12 @@ from src.routes import auth, users, wallets, transactions, admin, vulnerabilitie
 from src.models import user, wallet, transaction, session, audit_log
 from src.models.user import User
 from src.services.auth import get_current_user_dependency
+import os
 
 # Create FastAPI app
 app = FastAPI(
-    title="OWASP-WSTG-Vulnerable-App",
-    description="A comprehensive vulnerable application for OWASP Web Security Testing Guide",
+    title="SecureWallet - Digital Banking Platform (Vulnerable)",
+    description="A comprehensive vulnerable application for OWASP Top 10",
     version="1.0.0",
     docs_url="/docs",
     redoc_url="/redoc"
@@ -45,7 +46,7 @@ app.include_router(data_management.router, prefix="/api/data", tags=["Data Manag
 async def root():
     """Root endpoint - API information"""
     return {
-        "message": "OWASP-WSTG-Vulnerable-App API",
+        "message": "SecureWallet - Digital Banking Platform (Vulnerable) API",
         "version": "1.0.0",
         "docs": "/docs",
         "health": "/health"
@@ -53,37 +54,25 @@ async def root():
 
 
 @app.get("/health")
-async def health_check():
+async def health_check(current_user: User = Depends(get_current_user_dependency)):
     """Health check endpoint"""
-    return {"status": "healthy", "vulnerability_level": settings.vulnerability_level}
+    return {
+        "status": "healthy",
+        "app_name": "SecureWallet - Digital Banking Platform (Vulnerable)",
+        "user": current_user.username,
+        "timestamp": "2024-01-01T00:00:00Z"
+    }
 
 
 @app.get("/api/info")
-async def api_info():
-    """API information endpoint"""
+async def get_api_info():
+    """Get API information"""
     return {
-        "app_name": "OWASP-WSTG-Vulnerable-App",
+        "message": "SecureWallet - Digital Banking Platform (Vulnerable) API",
         "version": "1.0.0",
-        "vulnerability_level": settings.vulnerability_level,
-        "features": [
-            "User Authentication",
-            "Wallet Management",
-            "Transaction Processing",
-            "Admin Panel",
-            "Vulnerability Testing Framework"
-        ],
-        "vulnerability_categories": [
-            "Injection (SQL, NoSQL, Command)",
-            "Broken Authentication",
-            "Sensitive Data Exposure",
-            "XXE",
-            "Broken Access Control",
-            "Security Misconfiguration",
-            "XSS",
-            "Insecure Deserialization",
-            "Vulnerable Components",
-            "Insufficient Logging/Monitoring"
-        ]
+        "status": "running",
+        "environment": os.getenv("ENVIRONMENT", "development"),
+        "vulnerability_level": os.getenv("VULNERABILITY_LEVEL", "basic")
     }
 
 

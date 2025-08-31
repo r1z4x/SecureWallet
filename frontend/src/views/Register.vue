@@ -4,7 +4,7 @@
       <div class="text-center">
         <i class="fas fa-user-plus text-primary-600 text-5xl mb-4"></i>
         <h2 class="text-3xl font-bold text-gray-900">Create Account</h2>
-        <p class="text-gray-600 mt-2">Join SecureWallet today</p>
+        <p class="text-gray-600 mt-2">Join SecureWallet <sup class="text-red-500 text-xs">(Vulnerable)</sup> today</p>
       </div>
 
       <form @submit.prevent="handleRegister" class="bg-white p-8 rounded-lg shadow-lg">

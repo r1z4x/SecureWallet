@@ -1,96 +1,91 @@
 version: '3.8'
 
 services:
-  # MySQL Database
+  # MySQL Database (Development)
   mysql:
     image: mysql:8.0
-    container_name: owasp_mysql_dev
-    restart: unless-stopped
+    container_name: securewallet_mysql_dev
     environment:
-      MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: wallet_app
-      MYSQL_USER: wallet_user
-      MYSQL_PASSWORD: wallet_pass
+      MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_DATABASE: securewallet_dev
+      MYSQL_USER: securewallet_dev
+      MYSQL_PASSWORD: securewalletpass_dev
     ports:
-      - "3306:3306"
+      - "3307:3306"
     volumes:
-      - mysql_data_dev:/var/lib/mysql
+      - mysql_dev_data:/var/lib/mysql
       - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
-      - owasp_network_dev
+      - securewallet_network_dev
 
-  # MongoDB Database
+  # MongoDB Database (Development)
   mongodb:
     image: mongo:7.0
-    container_name: owasp_mongodb_dev
-    restart: unless-stopped
+    container_name: securewallet_mongodb_dev
     environment:
       MONGO_INITDB_ROOT_USERNAME: admin
       MONGO_INITDB_ROOT_PASSWORD: adminpass
-      MONGO_INITDB_DATABASE: wallet_app
+      MONGO_INITDB_DATABASE: wallet_app_dev
     ports:
-      - "27017:27017"
+      - "27018:27017"
     volumes:
-      - mongodb_data_dev:/data/db
+      - mongodb_dev_data:/data/db
     networks:
-      - owasp_network_dev
+      - securewallet_network_dev
 
-  # Redis Cache
+  # Redis Cache (Development)
   redis:
     image: redis:7.2-alpine
-    container_name: owasp_redis_dev
-    restart: unless-stopped
+    container_name: securewallet_redis_dev
     ports:
-      - "6379:6379"
+      - "6380:6379"
     volumes:
-      - redis_data_dev:/data
+      - redis_dev_data:/data
     networks:
-      - owasp_network_dev
+      - securewallet_network_dev
 
-  # Backend Application (Python FastAPI) - Development
+  # Backend Application (Development)
   backend:
     build: .
-    container_name: owasp_backend_dev
-    restart: unless-stopped
+    container_name: securewallet_backend_dev
     ports:
-      - "8080:8000"
+      - "8001:8000"
     env_file:
       - .env
     volumes:
-      - .:/app
-    command: uvicorn src.app.main:app --host 0.0.0.0 --port 8000 --reload
+      - ./src:/app/src
+      - ./requirements.txt:/app/requirements.txt
+    command: uvicorn src.app.main:app --reload --host 0.0.0.0 --port 8000
     depends_on:
       - mysql
       - mongodb
       - redis
     networks:
-      - owasp_network_dev
+      - securewallet_network_dev
 
-  # Frontend Application (Node.js Vue.js) - Development
+  # Frontend Application (Development)
   frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile.dev
-    container_name: owasp_frontend_dev
-    restart: unless-stopped
+    build: ./frontend
+    container_name: securewallet_frontend_dev
     ports:
-      - "3000:3000"
+      - "3001:3000"
     environment:
       - NODE_ENV=development
-      - VITE_API_BASE_URL=http://localhost:8080/api
+      - VITE_API_BASE_URL=http://localhost:8001/api
     volumes:
-      - ./frontend:/app
-      - /app/node_modules
+      - ./frontend/src:/app/src
+      - ./frontend/public:/app/public
+    command: npm run dev
     depends_on:
       - backend
     networks:
-      - owasp_network_dev
+      - securewallet_network_dev
 
 volumes:
-  mysql_data_dev:
-  mongodb_data_dev:
-  redis_data_dev:
+  mysql_dev_data:
+  mongodb_dev_data:
+  redis_dev_data:
 
 networks:
-  owasp_network_dev:
+  securewallet_network_dev:
     driver: bridge

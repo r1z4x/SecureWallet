@@ -5,7 +5,7 @@
         <div class="flex">
           <div class="flex-shrink-0 flex items-center">
             <i class="fas fa-wallet text-primary-600 text-2xl mr-2"></i>
-            <span class="text-xl font-bold text-gray-900">SecureWallet</span>
+            <span class="text-xl font-bold text-gray-900">SecureWallet <sup class="text-red-500 text-xs">(Vulnerable)</sup></span>
           </div>
           
           <div class="hidden sm:ml-6 sm:flex sm:space-x-8">

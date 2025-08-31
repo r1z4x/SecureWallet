@@ -2,7 +2,7 @@
   <div class="min-h-screen bg-gray-50">
     <Navigation />
     
-    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <!-- Header -->
       <div class="mb-8">
         <h1 class="text-3xl font-bold text-gray-900">Customer Support</h1>
@@ -12,101 +12,20 @@
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <!-- Main Content -->
         <div class="lg:col-span-2 space-y-6">
-          <!-- Create New Ticket -->
+          <!-- Create Ticket Button -->
           <div class="bg-white rounded-lg shadow-md p-6">
-            <h2 class="text-xl font-semibold text-gray-900 mb-6">Create Support Ticket</h2>
-            
-            <form @submit.prevent="handleCreateTicket" class="space-y-6">
-              <!-- Subject -->
+            <div class="flex items-center justify-between">
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                  Subject
-                </label>
-                <input
-                  v-model="ticketForm.subject"
-                  type="text"
-                  class="form-input w-full"
-                  placeholder="Brief description of your issue"
-                  required
-                >
+                <h2 class="text-xl font-semibold text-gray-900">Need Help?</h2>
+                <p class="text-gray-600 mt-1">Create a support ticket and we'll get back to you</p>
               </div>
-
-              <!-- Category -->
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                  Category
-                </label>
-                <select
-                  v-model="ticketForm.category"
-                  class="form-input w-full"
-                  required
-                >
-                  <option value="">Select a category</option>
-                  <option value="account">Account Issues</option>
-                  <option value="transaction">Transaction Problems</option>
-                  <option value="security">Security Concerns</option>
-                  <option value="technical">Technical Issues</option>
-                  <option value="billing">Billing & Payments</option>
-                  <option value="general">General Inquiry</option>
-                </select>
-              </div>
-
-              <!-- Priority -->
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                  Priority
-                </label>
-                <select
-                  v-model="ticketForm.priority"
-                  class="form-input w-full"
-                  required
-                >
-                  <option value="low">Low</option>
-                  <option value="medium">Medium</option>
-                  <option value="high">High</option>
-                  <option value="urgent">Urgent</option>
-                </select>
-              </div>
-
-              <!-- Message -->
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                  Message
-                </label>
-                <textarea
-                  v-model="ticketForm.message"
-                  rows="6"
-                  class="form-input w-full"
-                  placeholder="Please describe your issue in detail..."
-                  required
-                ></textarea>
-                <p class="text-xs text-gray-500 mt-1">
-                  {{ ticketForm.message?.length || 0 }}/1000 characters
-                </p>
-              </div>
-
-              <!-- Submit Button -->
-              <div class="pt-4">
-                <button
-                  type="submit"
-                  class="btn-primary w-full"
-                  :disabled="createLoading"
-                >
-                  <i v-if="createLoading" class="fas fa-spinner fa-spin mr-2"></i>
-                  <i v-else class="fas fa-paper-plane mr-2"></i>
-                  {{ createLoading ? 'Creating Ticket...' : 'Submit Ticket' }}
-                </button>
-              </div>
-            </form>
-
-            <!-- Error Message -->
-            <div v-if="error" class="mt-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
-              {{ error }}
-            </div>
-
-            <!-- Success Message -->
-            <div v-if="success" class="mt-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded">
-              {{ success }}
+              <button
+                @click="showCreateModal = true"
+                class="btn-primary"
+              >
+                <i class="fas fa-plus mr-2"></i>
+                Create New Ticket
+              </button>
             </div>
           </div>
 
@@ -283,6 +202,129 @@
       </div>
     </div>
 
+    <!-- Create Ticket Modal -->
+    <div
+      v-if="showCreateModal"
+      class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50"
+      @click="showCreateModal = false"
+    >
+      <div class="relative top-10 mx-auto p-5 border w-11/12 max-w-2xl shadow-lg rounded-md bg-white" @click.stop>
+        <div class="mt-3">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-semibold text-gray-900">
+              Create Support Ticket
+            </h3>
+            <button
+              @click="showCreateModal = false"
+              class="text-gray-400 hover:text-gray-600"
+            >
+              <i class="fas fa-times text-xl"></i>
+            </button>
+          </div>
+          
+          <form @submit.prevent="handleCreateTicket" class="space-y-6">
+            <!-- Subject -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">
+                Subject
+              </label>
+              <input
+                v-model="ticketForm.subject"
+                type="text"
+                class="form-input w-full"
+                placeholder="Brief description of your issue"
+                required
+              >
+            </div>
+
+            <!-- Category -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">
+                Category
+              </label>
+              <select
+                v-model="ticketForm.category"
+                class="form-input w-full"
+                required
+              >
+                <option value="">Select a category</option>
+                <option value="account">Account Issues</option>
+                <option value="transaction">Transaction Problems</option>
+                <option value="security">Security Concerns</option>
+                <option value="technical">Technical Issues</option>
+                <option value="billing">Billing & Payments</option>
+                <option value="general">General Inquiry</option>
+              </select>
+            </div>
+
+            <!-- Priority -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">
+                Priority
+              </label>
+              <select
+                v-model="ticketForm.priority"
+                class="form-input w-full"
+                required
+              >
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+                <option value="urgent">Urgent</option>
+              </select>
+            </div>
+
+            <!-- Message -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">
+                Message
+              </label>
+              <textarea
+                v-model="ticketForm.message"
+                rows="6"
+                class="form-input w-full"
+                placeholder="Please describe your issue in detail..."
+                required
+              ></textarea>
+              <p class="text-xs text-gray-500 mt-1">
+                {{ ticketForm.message?.length || 0 }}/1000 characters
+              </p>
+            </div>
+
+            <!-- Error Message -->
+            <div v-if="error" class="p-4 bg-red-100 border border-red-400 text-red-700 rounded">
+              {{ error }}
+            </div>
+
+            <!-- Success Message -->
+            <div v-if="success" class="p-4 bg-green-100 border border-green-400 text-green-700 rounded">
+              {{ success }}
+            </div>
+
+            <!-- Submit Button -->
+            <div class="flex justify-end space-x-3 pt-4">
+              <button
+                type="button"
+                @click="showCreateModal = false"
+                class="btn-secondary"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                class="btn-primary"
+                :disabled="createLoading"
+              >
+                <i v-if="createLoading" class="fas fa-spinner fa-spin mr-2"></i>
+                <i v-else class="fas fa-paper-plane mr-2"></i>
+                {{ createLoading ? 'Creating Ticket...' : 'Submit Ticket' }}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
     <!-- Ticket Detail Modal -->
     <div
       v-if="showTicketModal"
@@ -359,6 +401,7 @@ export default {
     const createLoading = ref(false)
     const error = ref('')
     const success = ref('')
+    const showCreateModal = ref(false)
     const showTicketModal = ref(false)
     const selectedTicket = ref(null)
     
@@ -403,6 +446,12 @@ export default {
         
         // Reload tickets
         await loadTickets()
+        
+        // Close modal after successful creation
+        setTimeout(() => {
+          showCreateModal.value = false
+          success.value = ''
+        }, 2000)
         
       } catch (err) {
         error.value = err.response?.data?.detail || err.message || 'Failed to create ticket'
@@ -474,6 +523,7 @@ export default {
       createLoading,
       error,
       success,
+      showCreateModal,
       showTicketModal,
       selectedTicket,
       tickets,

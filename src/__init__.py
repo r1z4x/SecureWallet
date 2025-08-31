@@ -1,2 +1,2 @@
-# OWASP-WSTG-Vulnerable-App
-# A comprehensive vulnerable application for OWASP Web Security Testing Guide
+# SecureWallet - Digital Banking Platform (Vulnerable)
+# A comprehensive vulnerable application for OWASP Top 10
