@@ -1,0 +1,300 @@
+basePath: /api
+definitions:
+  gin.H:
+    additionalProperties: {}
+    type: object
+  models.AuditLog:
+    properties:
+      action:
+        type: string
+      created_at:
+        type: string
+      details:
+        type: string
+      id:
+        type: integer
+      ip_address:
+        type: string
+      resource:
+        type: string
+      updated_at:
+        type: string
+      user:
+        allOf:
+        - $ref: '#/definitions/models.User'
+        description: Relationships
+      user_agent:
+        type: string
+      user_id:
+        type: integer
+    type: object
+  models.Session:
+    properties:
+      created_at:
+        type: string
+      expires_at:
+        type: string
+      id:
+        type: integer
+      token:
+        type: string
+      updated_at:
+        type: string
+      user:
+        allOf:
+        - $ref: '#/definitions/models.User'
+        description: Relationships
+      user_id:
+        type: integer
+    type: object
+  models.SupportTicket:
+    properties:
+      created_at:
+        type: string
+      description:
+        type: string
+      id:
+        type: integer
+      priority:
+        type: string
+      status:
+        type: string
+      subject:
+        type: string
+      updated_at:
+        type: string
+      user:
+        allOf:
+        - $ref: '#/definitions/models.User'
+        description: Relationships
+      user_id:
+        type: integer
+    type: object
+  models.Transaction:
+    properties:
+      amount:
+        type: number
+      created_at:
+        type: string
+      currency:
+        type: string
+      description:
+        type: string
+      id:
+        type: integer
+      status:
+        type: string
+      type:
+        description: deposit, withdrawal, transfer
+        type: string
+      updated_at:
+        type: string
+      wallet:
+        allOf:
+        - $ref: '#/definitions/models.Wallet'
+        description: Relationships
+      wallet_id:
+        type: integer
+    type: object
+  models.User:
+    properties:
+      audit_logs:
+        items:
+          $ref: '#/definitions/models.AuditLog'
+        type: array
+      created_at:
+        type: string
+      email:
+        type: string
+      id:
+        type: integer
+      is_active:
+        type: boolean
+      is_admin:
+        type: boolean
+      sessions:
+        items:
+          $ref: '#/definitions/models.Session'
+        type: array
+      support_tickets:
+        items:
+          $ref: '#/definitions/models.SupportTicket'
+        type: array
+      updated_at:
+        type: string
+      username:
+        type: string
+      wallets:
+        description: Relationships
+        items:
+          $ref: '#/definitions/models.Wallet'
+        type: array
+    type: object
+  models.Wallet:
+    properties:
+      balance:
+        type: number
+      created_at:
+        type: string
+      currency:
+        type: string
+      id:
+        type: integer
+      transactions:
+        items:
+          $ref: '#/definitions/models.Transaction'
+        type: array
+      updated_at:
+        type: string
+      user:
+        allOf:
+        - $ref: '#/definitions/models.User'
+        description: Relationships
+      user_id:
+        type: integer
+    type: object
+  routes.Token:
+    properties:
+      access_token:
+        type: string
+      token_type:
+        type: string
+    type: object
+  routes.UserCreate:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+      username:
+        type: string
+    required:
+    - email
+    - password
+    - username
+    type: object
+  routes.UserLogin:
+    properties:
+      password:
+        type: string
+      username:
+        type: string
+    required:
+    - password
+    - username
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: A comprehensive vulnerable application for OWASP Top 10
+  title: SecureWallet - Digital Banking Platform (Vulnerable)
+  version: 1.0.0
+paths:
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticate user with username and password
+      parameters:
+      - description: User login credentials
+        in: body
+        name: credentials
+        required: true
+        schema:
+          $ref: '#/definitions/routes.UserLogin'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/routes.Token'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/gin.H'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/gin.H'
+      summary: Login user
+      tags:
+      - auth
+  /auth/logout:
+    post:
+      consumes:
+      - application/json
+      description: Logout current user session
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+      summary: Logout user
+      tags:
+      - auth
+  /auth/me:
+    get:
+      consumes:
+      - application/json
+      description: Get current authenticated user information
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.User'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/gin.H'
+      security:
+      - ApiKeyAuth: []
+      summary: Get current user
+      tags:
+      - auth
+  /auth/refresh:
+    post:
+      consumes:
+      - application/json
+      description: Refresh access token
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+      summary: Refresh token
+      tags:
+      - auth
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Register a new user account with username, email, and password
+      parameters:
+      - description: User registration data
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/routes.UserCreate'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.User'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/gin.H'
+      summary: Register a new user
+      tags:
+      - auth
+swagger: "2.0"

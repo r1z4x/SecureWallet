@@ -17,6 +17,27 @@ export const useAuthStore = defineStore('auth', () => {
     loading.value = true
     try {
       const response = await authService.login(credentials)
+      
+      // Check if 2FA is required
+      if (response.requires_2fa) {
+        return response
+      }
+      
+      token.value = response.access_token
+      user.value = response.user
+      localStorage.setItem('token', response.access_token)
+      return response
+    } catch (error) {
+      throw error
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function login2FA(userId, code) {
+    loading.value = true
+    try {
+      const response = await authService.login2FA(userId, code)
       token.value = response.access_token
       user.value = response.user
       localStorage.setItem('token', response.access_token)
@@ -119,6 +140,7 @@ export const useAuthStore = defineStore('auth', () => {
     
     // Actions
     login,
+    login2FA,
     register,
     logout,
     getCurrentUser,

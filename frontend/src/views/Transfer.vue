@@ -95,7 +95,11 @@
                 </div>
                 <div class="flex justify-between text-xs text-gray-500 mt-1">
                   <span>Available: ${{ walletData.balance?.toFixed(2) || '0.00' }}</span>
-                  <span v-if="transferForm.amount">Fee: $0.00</span>
+                  <span v-if="transferForm.amount">Fee: ${{ calculateTransferFee(transferForm.amount) }}</span>
+                </div>
+                <div v-if="transferForm.amount" class="flex justify-between text-sm font-medium text-gray-700 mt-2 pt-2 border-t border-gray-200">
+                  <span>Total Amount:</span>
+                  <span class="text-primary-600">${{ (parseFloat(transferForm.amount) + parseFloat(calculateTransferFee(transferForm.amount))).toFixed(2) }}</span>
                 </div>
               </div>
 
@@ -175,7 +179,7 @@
               </div>
               <div class="flex justify-between">
                 <span class="text-gray-600">Transfer Fee:</span>
-                <span class="font-medium text-green-600">Free</span>
+                <span class="font-medium text-red-600">1% (Min $1, Max $50)</span>
               </div>
             </div>
           </div>
@@ -191,7 +195,7 @@
               <div
                 v-for="transfer in recentTransfers.slice(0, 3)"
                 :key="transfer.id"
-                class="flex items-center justify-between p-3 border border-gray-200 rounded-lg"
+                class="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50"
               >
                 <div>
                   <p class="text-sm font-medium text-gray-900">
@@ -279,18 +283,17 @@ export default {
 
     const loadRecentTransfers = async () => {
       try {
-        const response = await transactionService.getTransactions(10)
-        // Filter for outgoing transfers only (where from_wallet_id is current user's wallet)
-        if (userWallet.value) {
-          recentTransfers.value = response.filter(t => 
-            t.transaction_type === 'transfer' && 
-            t.from_wallet_id === userWallet.value.id
-          )
-        } else {
-          recentTransfers.value = []
-        }
+        const response = await transactionService.getTransactions(20) // Get more transactions to filter
+        
+        // Filter for outgoing transfers only
+        recentTransfers.value = response.filter(t => 
+          t.type === 'transfer' && 
+          t.wallet_id === userWallet.value?.id
+        ).slice(0, 5) // Get only the first 5
+        
       } catch (error) {
         console.error('Error loading recent transfers:', error)
+        recentTransfers.value = []
       }
     }
 
@@ -378,6 +381,20 @@ export default {
       }
     }
 
+    const calculateTransferFee = (amount) => {
+      if (!amount || parseFloat(amount) <= 0) return '0.00'
+      
+      const transferAmount = parseFloat(amount)
+      const feePercentage = 0.01 // 1%
+      let fee = transferAmount * feePercentage
+      
+      // Apply min/max limits
+      if (fee < 1.0) fee = 1.0
+      if (fee > 50.0) fee = 50.0
+      
+      return fee.toFixed(2)
+    }
+
     const formatDate = (dateString) => {
       return new Date(dateString).toLocaleDateString('en-US', {
         month: 'short',
@@ -388,10 +405,14 @@ export default {
     }
 
     const isFormValid = computed(() => {
+      const amount = parseFloat(transferForm.value.amount)
+      const fee = parseFloat(calculateTransferFee(transferForm.value.amount))
+      const totalAmount = amount + fee
+      
       return transferForm.value.recipient && 
              transferForm.value.amount && 
-             parseFloat(transferForm.value.amount) > 0 &&
-             parseFloat(transferForm.value.amount) <= walletData.value.balance
+             amount > 0 &&
+             totalAmount <= walletData.value.balance
     })
 
     onMounted(async () => {
@@ -408,6 +429,7 @@ export default {
       recentTransfers,
       transferForm,
       isFormValid,
+      calculateTransferFee,
       searchRecipient,
       selectRecipient,
       handleTransfer,

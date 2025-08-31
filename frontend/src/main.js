@@ -15,6 +15,12 @@ import Transfer from './views/Transfer.vue'
 import Profile from './views/Profile.vue'
 import Support from './views/Support.vue'
 import Admin from './views/Admin.vue'
+import ResetDatabase from './views/ResetDatabase.vue'
+import HelpCenter from './views/HelpCenter.vue'
+import TermsOfService from './views/TermsOfService.vue'
+import FAQ from './views/FAQ.vue'
+import UserGuide from './views/UserGuide.vue'
+import SecurityTips from './views/SecurityTips.vue'
 
 // Import stores
 import { createPinia } from 'pinia'
@@ -88,6 +94,42 @@ const router = createRouter({
       name: 'Admin',
       component: Admin,
       meta: { requiresAuth: true, requiresAdmin: true }
+    },
+    {
+      path: '/reset-database',
+      name: 'ResetDatabase',
+      component: ResetDatabase,
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/help',
+      name: 'HelpCenter',
+      component: HelpCenter,
+      meta: { requiresAuth: false }
+    },
+    {
+      path: '/terms',
+      name: 'TermsOfService',
+      component: TermsOfService,
+      meta: { requiresAuth: false }
+    },
+    {
+      path: '/faq',
+      name: 'FAQ',
+      component: FAQ,
+      meta: { requiresAuth: false }
+    },
+    {
+      path: '/user-guide',
+      name: 'UserGuide',
+      component: UserGuide,
+      meta: { requiresAuth: false }
+    },
+    {
+      path: '/security-tips',
+      name: 'SecurityTips',
+      component: SecurityTips,
+      meta: { requiresAuth: false }
     }
   ]
 })

@@ -1,132 +1,100 @@
-# SecureWallet - Digital Banking Platform (Vulnerable)
+# OWASP WSTG Vulnerable Application
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Python](https://img.shields.io/badge/Python-3.12+-blue.svg)](https://www.python.org/downloads/)
-[![Node.js](https://img.shields.io/badge/Node.js-18+-green.svg)](https://nodejs.org/)
-[![Go](https://img.shields.io/badge/Go-1.23+-blue.svg)](https://golang.org/)
-[![Docker](https://img.shields.io/badge/Docker-20.10+-blue.svg)](https://www.docker.com/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.104+-green.svg)](https://fastapi.tiangolo.com/)
-[![Vue.js](https://img.shields.io/badge/Vue.js-3.4+-green.svg)](https://vuejs.org/)
-[![OWASP](https://img.shields.io/badge/OWASP-Top%2010-orange.svg)](https://owasp.org/www-project-top-ten/)
-[![Vulnerable](https://img.shields.io/badge/Vulnerable-For%20Testing-red.svg)](https://owasp.org/)
+A comprehensive vulnerable web application designed for OWASP Web Security Testing Guide (WSTG) and Attack Simulator integration. This application simulates real-world vulnerabilities across multiple OWASP Top 10 categories with advanced attack techniques including second-order attacks, out-of-band (OOB) exfiltration, and complex bypass methods.
 
-A comprehensive vulnerable application designed for OWASP Top 10 training and educational purposes. This application is dedicated to **[OWASPAttackSimulator](https://github.com/r1z4x/OWASPAttackSimulator)** and has been specifically developed to work seamlessly with this security testing platform.
+## 🎯 Purpose
 
-## Purpose
+This application serves as a testing platform for:
+- **OWASPAttackSimulator** integration and testing
+- **Security researchers** and penetration testers
+- **Educational purposes** for learning web application security
+- **Vulnerability assessment** training and certification
 
-This application is designed to work stably with [OWASPAttackSimulator](https://github.com/r1z4x/OWASPAttackSimulator), enabling successful testing of security products and services. It provides a realistic digital banking environment with intentionally implemented vulnerabilities across all OWASP Top 10 categories, making it an ideal platform for:
+The application contains intentionally vulnerable code with vulnerabilities integrated into the existing application functionality, making it suitable for comprehensive security testing scenarios.
 
-- **Security Product Testing**: Comprehensive evaluation of security tools and solutions
-- **Service Validation**: Testing security services and monitoring capabilities
-- **Training & Education**: Hands-on learning for security professionals
-- **Research & Development**: Development and testing of new security technologies
+## 🏗️ Architecture
 
-## 🚨 **IMPORTANT DISCLAIMER**
+### Backend (Go Gin)
+- **Framework**: Go Gin with GORM ORM
+- **Database**: MySQL with Redis caching
+- **Authentication**: JWT-based with multiple vulnerability patterns
+- **Vulnerability Integration**: Payload-based aggregation system with webhook logging
 
-**This application is intentionally vulnerable and designed for educational and testing purposes in controlled environments. It demonstrates various security vulnerabilities and should NEVER be used in production environments or deployed on public networks.**
+### Frontend (Vue.js)
+- **Framework**: Vue 3 with Composition API
+- **Styling**: Tailwind CSS
+- **State Management**: Pinia
+- **Build Tool**: Vite
 
-## Vulnerability Types
-
-### 1. Injection Vulnerabilities
-- **SQL Injection** (MySQL) - Direct concatenation, partial sanitization, complex scenarios
-- **NoSQL Injection** (MongoDB) - JSON injection, operator injection, aggregation
-- **Command Injection** - System command execution, file operations
-
-### 2. Broken Authentication
-- **Weak Password Storage** - Plain text, MD5, SHA1, Base64
-- **Insecure JWT** - Weak secrets, long expiration, algorithm confusion
-- **Session Management** - Predictable IDs, weak validation
-
-### 3. Sensitive Data Exposure
-- **Plain Text Passwords** - Unencrypted storage
-- **Weak Encryption** - Outdated algorithms
-- **Information Disclosure** - Verbose error messages
-
-### 4. XSS (Cross-Site Scripting)
-- **Reflected XSS** - Direct output, partial sanitization
-- **Stored XSS** - Database storage, complex bypass
-- **DOM XSS** - Client-side manipulation
-- **XSS in JSON** - API responses
-
-### 5. Broken Access Control
-- **IDOR** - Insecure direct object references
-- **Privilege Escalation** - Admin bypass, role manipulation
-- **Missing Authorization** - Unprotected endpoints
-
-### 6. Security Misconfiguration
-- **Verbose Error Messages** - Detailed stack traces
-- **Misconfigured CORS** - Overly permissive settings
-- **Default Configurations** - Weak defaults
-
-### 7. Insecure Deserialization
-- **Pickle Injection** - Unsafe deserialization with command execution
-- **JSON Injection** - Malicious payloads
-
-### 8. XXE (XML External Entity)
-- **File Read** - Direct file system access
-- **Remote Entity** - External resource inclusion
-- **Parameter Entity** - Complex injection scenarios
-- **Chained Attacks** - Multiple attack vectors
-
-### 9. Vulnerable Components
-- **Outdated Dependencies** - Known vulnerabilities
-- **Unpatched Libraries** - Security issues
-
-### 10. Insufficient Logging/Monitoring
-- **Missing Audit Logs** - No security events
-- **Unmonitored Actions** - Admin operations
-
-## Quick Start
+## 🚀 Quick Start
 
 ### Prerequisites
 - Docker and Docker Compose
+- Go 1.21+
+- Node.js 16+
 
-### Setup
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/your-username/securewallet-vulnerable-app.git
-   cd securewallet-vulnerable-app
-   ```
+### 1. Clone and Setup
+```bash
+git clone <repository-url>
+cd OWASP-WSTG-Vulnerable-App
+```
 
-2. **Setup environment variables**
-   ```bash
-   cp env.example .env
-   ```
+### 2. Environment Configuration
+```bash
+cp env.example .env
+# Edit .env file with your configuration
+```
 
-3. **Start the application**
-   ```bash
-   docker-compose up -d
-   ```
+### 3. Start the Application
+```bash
+# Start all services
+docker-compose up -d
 
-4. **Access the application**
-   - **Frontend**: http://localhost:3000
-   - **Backend API**: http://localhost:8000
-   - **API Documentation**: http://localhost:8000/docs
+# Or start development environment
+./start-go-dev.sh
+```
 
-## Default Credentials
+### 4. Access the Application
+- **Frontend**: http://localhost:3000
+- **Backend API**: http://localhost:8080
+- **API Documentation**: http://localhost:8080/docs
 
-- **Admin User**: `admin@vulnerable-app.com` / `admin123`
+## 🔧 Vulnerability Integration Approach
 
-## Vulnerability Levels
+The application uses a **payload-based aggregation system** that:
 
-Set `VULNERABILITY_LEVEL` in your environment:
+1. **Logs payloads** sent by the Attack Simulator
+2. **Logs webhook requests** made by the Attack Simulator
+3. **Aggregates vulnerability levels** per test case
+4. **Calculates final difficulty** based on maximum level triggered
+5. **Reports results** via webhook to the Attack Simulator with request logs
 
-- **basic**: Simple vulnerabilities for beginners
-- **medium**: Moderate complexity with some protection
-- **hard**: Advanced scenarios requiring bypass techniques
-- **expert**: Complex chained attacks and advanced techniques
+### Vulnerability Levels
 
-## License
+The system supports four progressive difficulty levels:
 
-This project is licensed under the MIT License.
+- **basic**: Simple, direct vulnerabilities
+- **medium**: Vulnerabilities with weak protection mechanisms and blind attacks
+- **hard**: Complex vulnerabilities requiring advanced bypass techniques and time-based attacks
+- **expert**: Sophisticated vulnerabilities with multiple attack vectors including OOB and second-order attacks
 
-## Acknowledgments
+## 🎯 Integrated Vulnerability Types
 
-- **[OWASPAttackSimulator](https://github.com/r1z4x/OWASPAttackSimulator)** - This application is dedicated to and designed for OWASPAttackSimulator
-- OWASP Foundation for the OWASP Top 10
-- FastAPI for the excellent web framework
-- All contributors and security researchers
+### Authentication Routes (`/api/auth/*`)
+- **Weak Password Storage**: Multiple formats (plain text, MD5, SHA1, Base64)
+- **Weak Authentication Logic**: Multiple bypass techniques
+- **Weak JWT Implementation**: Algorithm confusion, weak secrets, long expiration
+- **Password Reset Vulnerabilities**: OOB attacks, second-order storage
 
----
+### User Management Routes (`/api/users/*`)
+- **SQL Injection**: Advanced techniques (OOB, second-order, union-based)
+- **IDOR (Insecure Direct Object References)**: Complex bypass patterns
+- **XSS (Cross-Site Scripting)**: Advanced sanitization bypass techniques
 
-**Remember: This application is intentionally vulnerable. Use responsibly and only in controlled environments.**
+### Transaction Routes (`/api/transactions/*`)
+- **SQL Injection**: Blind, time-based, union-based attacks
+- **Command Injection**: DNS, HTTP, and advanced command chaining
+- **IDOR**: Transaction access control bypass
+
+### Support System Routes (`/api/support/*`)
+- **XSS**: Reflected, stored, and DOM-based attacks

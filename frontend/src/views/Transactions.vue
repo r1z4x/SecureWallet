@@ -11,60 +11,112 @@
 
       <!-- Filters and Search -->
       <div class="bg-white rounded-lg shadow-md p-6 mb-8">
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Transaction Type</label>
-            <select
-              v-model="filters.type"
-              class="form-input w-full"
-              @change="loadTransactions"
-            >
-              <option value="">All Types</option>
-              <option value="TRANSFER">Transfer</option>
-              <option value="DEPOSIT">Deposit</option>
-              <option value="WITHDRAWAL">Withdrawal</option>
-            </select>
+        <div class="mb-4">
+          <h3 class="text-lg font-semibold text-gray-900 mb-2">Filters</h3>
+          <p class="text-sm text-gray-600">Filter your transactions by type, status, date range, or search terms</p>
+        </div>
+        
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <!-- Transaction Type Filter -->
+          <div class="space-y-2">
+            <label class="block text-sm font-medium text-gray-700">
+              <i class="fas fa-filter mr-2 text-gray-400"></i>
+              Transaction Type
+            </label>
+            <div class="relative">
+              <select
+                v-model="filters.type"
+                class="form-select"
+                @change="loadTransactions"
+              >
+                <option value="">All Types</option>
+                <option value="TRANSFER">Transfer</option>
+                <option value="DEPOSIT">Deposit</option>
+                <option value="WITHDRAWAL">Withdrawal</option>
+              </select>
+              <div class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                <i class="fas fa-chevron-down text-gray-400 text-xs"></i>
+              </div>
+            </div>
           </div>
           
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
-            <select
-              v-model="filters.status"
-              class="form-input w-full"
-              @change="loadTransactions"
-            >
-              <option value="">All Status</option>
-              <option value="COMPLETED">Completed</option>
-              <option value="PENDING">Pending</option>
-              <option value="FAILED">Failed</option>
-            </select>
+          <!-- Status Filter -->
+          <div class="space-y-2">
+            <label class="block text-sm font-medium text-gray-700">
+              <i class="fas fa-circle mr-2 text-gray-400"></i>
+              Status
+            </label>
+            <div class="relative">
+              <select
+                v-model="filters.status"
+                class="form-select"
+                @change="loadTransactions"
+              >
+                <option value="">All Status</option>
+                <option value="COMPLETED">Completed</option>
+                <option value="PENDING">Pending</option>
+                <option value="FAILED">Failed</option>
+              </select>
+              <div class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                <i class="fas fa-chevron-down text-gray-400 text-xs"></i>
+              </div>
+            </div>
           </div>
           
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Date Range</label>
-            <select
-              v-model="filters.dateRange"
-              class="form-input w-full"
-              @change="loadTransactions"
-            >
-              <option value="7">Last 7 days</option>
-              <option value="30">Last 30 days</option>
-              <option value="90">Last 90 days</option>
-              <option value="365">Last year</option>
-              <option value="all">All time</option>
-            </select>
+          <!-- Date Range Filter -->
+          <div class="space-y-2">
+            <label class="block text-sm font-medium text-gray-700">
+              <i class="fas fa-calendar mr-2 text-gray-400"></i>
+              Date Range
+            </label>
+            <div class="relative">
+              <select
+                v-model="filters.dateRange"
+                class="form-select"
+                @change="loadTransactions"
+              >
+                <option value="7">Last 7 days</option>
+                <option value="30">Last 30 days</option>
+                <option value="90">Last 90 days</option>
+                <option value="365">Last year</option>
+                <option value="all">All time</option>
+              </select>
+              <div class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                <i class="fas fa-chevron-down text-gray-400 text-xs"></i>
+              </div>
+            </div>
           </div>
           
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Search</label>
-            <input
-              v-model="filters.search"
-              type="text"
-              class="form-input w-full"
-              placeholder="Search transactions..."
-              @input="debounceSearch"
-            >
+          <!-- Search Filter -->
+          <div class="space-y-2">
+            <label class="block text-sm font-medium text-gray-700">
+              <i class="fas fa-search mr-2 text-gray-400"></i>
+              Search
+            </label>
+            <div class="relative">
+              <input
+                v-model="filters.search"
+                type="text"
+                class="form-input pl-10"
+                placeholder="Search transactions..."
+                @input="debounceSearch"
+              >
+              <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                <i class="fas fa-search text-gray-400 text-sm"></i>
+              </div>
+            </div>
           </div>
+        </div>
+        
+        <!-- Clear Filters Button -->
+        <div class="mt-4 flex justify-end">
+          <button
+            @click="clearFilters"
+            class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors"
+          >
+            <i class="fas fa-times mr-2"></i>
+            Clear Filters
+          </button>
         </div>
       </div>
 
@@ -157,67 +209,34 @@
             <div
               v-for="transaction in transactions"
               :key="transaction.id"
-              class="border border-gray-200 rounded-lg p-6 hover:bg-gray-50 transition-colors"
+              class="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50"
             >
-              <div class="flex items-center justify-between">
-                <div class="flex items-center space-x-4">
-                  <div class="flex-shrink-0">
-                    <div class="w-12 h-12 rounded-full flex items-center justify-center"
-                         :class="getTransactionBgColor(transaction)">
-                      <i
-                        :class="getTransactionIcon(transaction)"
-                        class="text-white text-lg"
-                      ></i>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <h4 class="text-lg font-medium text-gray-900">
-                      {{ transaction.description || 'Transaction' }}
-                    </h4>
-                    <div class="flex items-center space-x-4 text-sm text-gray-500 mt-1">
-                      <span>{{ formatDate(transaction.created_at) }}</span>
-                      <span class="flex items-center">
-                        <i class="fas fa-circle text-xs mr-1"></i>
-                        {{ transaction.transaction_type }}
-                      </span>
-                      <span class="flex items-center">
-                        <i class="fas fa-circle text-xs mr-1"></i>
-                        {{ transaction.status }}
-                      </span>
-                    </div>
-                    
-                    <!-- Transaction Details -->
-                    <div class="mt-2 text-sm text-gray-600">
-                      <div v-if="transaction.from_wallet && transaction.to_wallet">
-                        <span v-if="transaction.from_wallet.user_id === user?.id">
-                          To: {{ transaction.to_wallet.user?.email || 'Unknown' }}
-                        </span>
-                        <span v-else>
-                          From: {{ transaction.from_wallet.user?.email || 'Unknown' }}
-                        </span>
-                      </div>
-                      <div v-else-if="transaction.transaction_type === 'DEPOSIT'">
-                        External deposit
-                      </div>
-                      <div v-else-if="transaction.transaction_type === 'WITHDRAWAL'">
-                        External withdrawal
-                      </div>
-                    </div>
-                  </div>
+              <div class="flex items-center">
+                <div class="flex-shrink-0">
+                  <i
+                    :class="[getTransactionIcon(transaction), getTransactionColor(transaction)]"
+                    class="text-lg"
+                  ></i>
                 </div>
-                
-                <div class="text-right">
-                  <p
-                    class="text-xl font-bold"
-                    :class="getAmountColor(transaction)"
-                  >
-                    {{ formatAmount(transaction) }}
+                <div class="ml-4">
+                  <p class="text-sm font-medium text-gray-900">
+                    {{ transaction.description || 'Transaction' }}
                   </p>
-                  <p class="text-sm text-gray-500 mt-1">
-                    Transaction ID: {{ transaction.id }}
+                  <p class="text-xs text-gray-500">
+                    {{ formatDate(transaction.created_at) }}
                   </p>
                 </div>
+              </div>
+              <div class="text-right">
+                <p
+                  class="text-sm font-semibold"
+                  :class="getAmountColor(transaction)"
+                >
+                  {{ formatAmount(transaction) }}
+                </p>
+                <p class="text-xs text-gray-500">
+                  {{ transaction.status }}
+                </p>
               </div>
             </div>
           </div>
@@ -376,6 +395,17 @@ export default {
       }, 300)
     }
 
+    const clearFilters = () => {
+      filters.value = {
+        type: '',
+        status: '',
+        dateRange: '30',
+        search: ''
+      }
+      currentPage.value = 1
+      loadTransactions()
+    }
+
     const searchTimeout = ref(null)
 
     const exportTransactions = () => {
@@ -414,6 +444,19 @@ export default {
       }
     }
 
+    const getTransactionColor = (transaction) => {
+      switch (transaction.transaction_type) {
+        case 'TRANSFER':
+          return 'text-blue-600'
+        case 'DEPOSIT':
+          return 'text-green-600'
+        case 'WITHDRAWAL':
+          return 'text-red-600'
+        default:
+          return 'text-gray-600'
+      }
+    }
+
     const getTransactionBgColor = (transaction) => {
       switch (transaction.transaction_type) {
         case 'TRANSFER':
@@ -428,15 +471,39 @@ export default {
     }
 
     const getAmountColor = (transaction) => {
-      const isIncoming = transaction.to_wallet && transaction.to_wallet.user_id === user.value?.id
-      return isIncoming ? 'text-green-600' : 'text-red-600'
+      // Determine if this is incoming or outgoing for the current user
+      if (!user.value) return 'text-gray-600'
+      
+      // For TRANSFER transactions, check if it's outgoing (negative) or incoming (positive)
+      if (transaction.transaction_type === 'TRANSFER') {
+        // If description contains "fee", it's likely an outgoing transfer
+        if (transaction.description && transaction.description.includes('fee')) {
+          return 'text-red-600'
+        }
+        // If description contains "from", it's likely an incoming transfer
+        if (transaction.description && transaction.description.includes('from')) {
+          return 'text-green-600'
+        }
+      }
+      
+      // For other transaction types, they're positive
+      return 'text-green-600'
     }
 
     const formatAmount = (transaction) => {
       const amount = parseFloat(transaction.amount)
-      const isIncoming = transaction.to_wallet && transaction.to_wallet.user_id === user.value?.id
-      const prefix = isIncoming ? '+' : '-'
-      return `${prefix}$${amount.toFixed(2)}`
+      
+      // For TRANSFER transactions, show negative for outgoing
+      if (transaction.transaction_type === 'TRANSFER') {
+        if (transaction.description && transaction.description.includes('fee')) {
+          return `-$${amount.toFixed(2)}`
+        }
+        if (transaction.description && transaction.description.includes('from')) {
+          return `+$${amount.toFixed(2)}`
+        }
+      }
+      
+      return `$${amount.toFixed(2)}`
     }
 
     const formatDate = (dateString) => {
@@ -477,8 +544,10 @@ export default {
       loadTransactions,
       changePage,
       debounceSearch,
+      clearFilters,
       exportTransactions,
       getTransactionIcon,
+      getTransactionColor,
       getTransactionBgColor,
       getAmountColor,
       formatAmount,

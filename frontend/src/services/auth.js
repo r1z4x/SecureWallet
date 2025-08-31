@@ -45,6 +45,11 @@ export const authService = {
     return response.data
   },
 
+  async login2FA(userId, code) {
+    const response = await api.post('/auth/login/2fa', { user_id: userId, code })
+    return response.data
+  },
+
   async register(userData) {
     const response = await api.post('/auth/register', userData)
     return response.data

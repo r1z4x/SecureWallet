@@ -17,6 +17,7 @@
               class="form-input" 
               placeholder="Enter your username or email"
               required
+              :disabled="requires2FA"
             >
           </div>
           
@@ -28,7 +29,25 @@
               class="form-input" 
               placeholder="Enter your password"
               required
+              :disabled="requires2FA"
             >
+          </div>
+
+          <!-- 2FA Code Input -->
+          <div v-if="requires2FA">
+            <label class="form-label">2FA Code</label>
+            <input 
+              v-model="form.code2FA" 
+              type="text" 
+              class="form-input" 
+              placeholder="Enter 6-digit code"
+              maxlength="6"
+              pattern="[0-9]{6}"
+              required
+            >
+            <p class="text-xs text-gray-500 mt-1">
+              Enter the 6-digit code from your authenticator app
+            </p>
           </div>
 
           <div>
@@ -38,8 +57,9 @@
               :disabled="loading"
             >
               <i v-if="loading" class="fas fa-spinner fa-spin mr-2"></i>
+              <i v-else-if="requires2FA" class="fas fa-shield-alt mr-2"></i>
               <i v-else class="fas fa-sign-in-alt mr-2"></i>
-              {{ loading ? 'Signing In...' : 'Sign In' }}
+              {{ loading ? 'Signing In...' : requires2FA ? 'Verify 2FA' : 'Sign In' }}
             </button>
           </div>
         </div>
@@ -84,21 +104,40 @@ export default {
     
     const form = ref({
       username: '',
-      password: ''
+      password: '',
+      code2FA: ''
     })
     
     const loading = ref(false)
     const error = ref('')
+    const requires2FA = ref(false)
+    const userId2FA = ref(null)
 
     const handleLogin = async () => {
       loading.value = true
       error.value = ''
       
       try {
-        await authStore.login(form.value)
-        router.push('/dashboard')
+        if (requires2FA.value) {
+          // 2FA verification
+          await authStore.login2FA(userId2FA.value, form.value.code2FA)
+          router.push('/dashboard')
+        } else {
+          // Initial login
+          const response = await authStore.login(form.value)
+          
+          // Check if 2FA is required
+          if (response && response.requires_2fa) {
+            requires2FA.value = true
+            userId2FA.value = response.user_id
+            form.value.code2FA = ''
+            return
+          }
+          
+          router.push('/dashboard')
+        }
       } catch (err) {
-        error.value = err.response?.data?.detail || 'Login failed. Please try again.'
+        error.value = err.response?.data?.error || err.message || 'Login failed'
       } finally {
         loading.value = false
       }
@@ -108,6 +147,7 @@ export default {
       form,
       loading,
       error,
+      requires2FA,
       handleLogin
     }
   }

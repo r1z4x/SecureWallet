@@ -12,6 +12,23 @@
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <!-- Main Content -->
         <div class="lg:col-span-2 space-y-6">
+          <!-- Help Center Link -->
+          <div class="bg-gradient-to-r from-primary-600 to-primary-700 rounded-lg shadow-md p-6 text-white">
+            <div class="flex items-center justify-between">
+              <div>
+                <h2 class="text-xl font-semibold">Looking for Quick Answers?</h2>
+                <p class="text-primary-100 mt-1">Check our Help Center for frequently asked questions</p>
+              </div>
+              <router-link
+                to="/help"
+                class="inline-flex items-center px-4 py-2 bg-white text-primary-600 font-medium rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                <i class="fas fa-question-circle mr-2"></i>
+                Visit Help Center
+              </router-link>
+            </div>
+          </div>
+
           <!-- Create Ticket Button -->
           <div class="bg-white rounded-lg shadow-md p-6">
             <div class="flex items-center justify-between">
@@ -74,17 +91,13 @@
                       </div>
                       
                       <p class="text-gray-600 mb-3">
-                        {{ ticket.message }}
+                        {{ ticket.description }}
                       </p>
                       
                       <div class="flex items-center space-x-4 text-sm text-gray-500">
                         <span>
                           <i class="fas fa-calendar mr-1"></i>
                           {{ formatDate(ticket.created_at) }}
-                        </span>
-                        <span>
-                          <i class="fas fa-tag mr-1"></i>
-                          {{ ticket.category }}
                         </span>
                         <span>
                           <i class="fas fa-hashtag mr-1"></i>
@@ -115,8 +128,8 @@
           <div class="bg-white rounded-lg shadow-md p-6">
             <h3 class="text-lg font-semibold text-gray-900 mb-4">Quick Help</h3>
             <div class="space-y-3">
-              <a
-                href="#"
+              <router-link
+                to="/faq"
                 class="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
               >
                 <i class="fas fa-question-circle text-blue-600 mr-3"></i>
@@ -124,9 +137,9 @@
                   <p class="text-sm font-medium text-gray-900">FAQ</p>
                   <p class="text-xs text-gray-500">Frequently asked questions</p>
                 </div>
-              </a>
-              <a
-                href="#"
+              </router-link>
+              <router-link
+                to="/user-guide"
                 class="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
               >
                 <i class="fas fa-book text-green-600 mr-3"></i>
@@ -134,9 +147,9 @@
                   <p class="text-sm font-medium text-gray-900">User Guide</p>
                   <p class="text-xs text-gray-500">How to use our platform</p>
                 </div>
-              </a>
-              <a
-                href="#"
+              </router-link>
+              <router-link
+                to="/security-tips"
                 class="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
               >
                 <i class="fas fa-shield-alt text-purple-600 mr-3"></i>
@@ -144,7 +157,27 @@
                   <p class="text-sm font-medium text-gray-900">Security Tips</p>
                   <p class="text-xs text-gray-500">Keep your account safe</p>
                 </div>
-              </a>
+              </router-link>
+              <router-link
+                to="/help"
+                class="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                <i class="fas fa-life-ring text-orange-600 mr-3"></i>
+                <div>
+                  <p class="text-sm font-medium text-gray-900">Help Center</p>
+                  <p class="text-xs text-gray-500">Browse all help articles</p>
+                </div>
+              </router-link>
+              <router-link
+                to="/terms"
+                class="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                <i class="fas fa-file-alt text-indigo-600 mr-3"></i>
+                <div>
+                  <p class="text-sm font-medium text-gray-900">Terms of Service</p>
+                  <p class="text-xs text-gray-500">Read our terms</p>
+                </div>
+              </router-link>
             </div>
           </div>
 
@@ -237,25 +270,7 @@
               >
             </div>
 
-            <!-- Category -->
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">
-                Category
-              </label>
-              <select
-                v-model="ticketForm.category"
-                class="form-input w-full"
-                required
-              >
-                <option value="">Select a category</option>
-                <option value="account">Account Issues</option>
-                <option value="transaction">Transaction Problems</option>
-                <option value="security">Security Concerns</option>
-                <option value="technical">Technical Issues</option>
-                <option value="billing">Billing & Payments</option>
-                <option value="general">General Inquiry</option>
-              </select>
-            </div>
+
 
             <!-- Priority -->
             <div>
@@ -367,13 +382,12 @@
             <div>
               <h5 class="font-medium text-gray-900 mb-2">Message:</h5>
               <p class="text-gray-600 bg-gray-50 p-3 rounded">
-                {{ selectedTicket.message }}
+                {{ selectedTicket.description }}
               </p>
             </div>
             
             <div class="text-sm text-gray-500">
               <p>Created: {{ formatDate(selectedTicket.created_at) }}</p>
-              <p>Category: {{ selectedTicket.category }}</p>
             </div>
           </div>
         </div>
@@ -409,7 +423,6 @@ export default {
     
     const ticketForm = ref({
       subject: '',
-      category: '',
       priority: 'medium',
       message: ''
     })
@@ -418,9 +431,22 @@ export default {
       loading.value = true
       try {
         const response = await supportService.getTickets()
-        tickets.value = response
+        console.log('Support tickets response:', response) // Debug log
+        
+        // Ensure tickets is always an array
+        if (Array.isArray(response)) {
+          tickets.value = response
+        } else if (response && Array.isArray(response.tickets)) {
+          tickets.value = response.tickets
+        } else if (response && Array.isArray(response.data)) {
+          tickets.value = response.data
+        } else {
+          console.warn('Unexpected response format:', response)
+          tickets.value = []
+        }
       } catch (error) {
         console.error('Error loading tickets:', error)
+        tickets.value = []
       } finally {
         loading.value = false
       }
@@ -439,7 +465,6 @@ export default {
         // Reset form
         ticketForm.value = {
           subject: '',
-          category: '',
           priority: 'medium',
           message: ''
         }
@@ -506,10 +531,12 @@ export default {
     }
 
     const openTicketsCount = computed(() => {
+      if (!Array.isArray(tickets.value)) return 0
       return tickets.value.filter(t => t.status === 'open').length
     })
 
     const resolvedTicketsCount = computed(() => {
+      if (!Array.isArray(tickets.value)) return 0
       return tickets.value.filter(t => t.status === 'resolved').length
     })
 

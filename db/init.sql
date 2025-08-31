@@ -2,8 +2,8 @@
 -- This script creates all necessary tables for the banking application
 
 -- Create database if not exists
-CREATE DATABASE IF NOT EXISTS wallet_app;
-USE wallet_app;
+CREATE DATABASE IF NOT EXISTS securewallet_dev;
+USE securewallet_dev;
 
 -- Users table
 CREATE TABLE IF NOT EXISTS users (
@@ -13,6 +13,8 @@ CREATE TABLE IF NOT EXISTS users (
     password_hash VARCHAR(255) NOT NULL,
     is_active BOOLEAN DEFAULT TRUE,
     is_admin BOOLEAN DEFAULT FALSE,
+    two_factor_enabled BOOLEAN DEFAULT FALSE,
+    two_factor_secret VARCHAR(255),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_username (username),
@@ -97,35 +99,21 @@ CREATE TABLE IF NOT EXISTS support_tickets (
     INDEX idx_created_at (created_at)
 );
 
--- Insert default admin user
-INSERT INTO users (username, email, password_hash, is_admin) VALUES 
-('admin', 'admin@securewallet.com', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj/RK.s5uO.G', TRUE)
-ON DUPLICATE KEY UPDATE username=username;
+-- Login history table
+CREATE TABLE IF NOT EXISTS login_history (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    ip_address VARCHAR(45),
+    user_agent TEXT,
+    status VARCHAR(20) NOT NULL,
+    location VARCHAR(100),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_user_id (user_id),
+    INDEX idx_status (status),
+    INDEX idx_created_at (created_at)
+);
 
--- Insert default wallet for admin
-INSERT INTO wallets (user_id, wallet_name, balance, currency) VALUES 
-(1, 'Admin Wallet', 10000.00, 'USD')
-ON DUPLICATE KEY UPDATE wallet_name=wallet_name;
-
--- Insert some sample users for testing
-INSERT INTO users (username, email, password_hash) VALUES 
-('john_doe', 'john@example.com', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj/RK.s5uO.G'),
-('jane_smith', 'jane@example.com', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj/RK.s5uO.G'),
-('bob_johnson', 'bob@example.com', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj/RK.s5uO.G')
-ON DUPLICATE KEY UPDATE username=username;
-
--- Insert wallets for sample users
-INSERT INTO wallets (user_id, wallet_name, balance, currency) VALUES 
-(2, 'John\'s Wallet', 5000.00, 'USD'),
-(3, 'Jane\'s Wallet', 7500.00, 'USD'),
-(4, 'Bob\'s Wallet', 3000.00, 'USD')
-ON DUPLICATE KEY UPDATE wallet_name=wallet_name;
-
--- Insert some sample transactions
-INSERT INTO transactions (from_wallet_id, to_wallet_id, amount, transaction_type, status, description) VALUES 
-(1, 2, 1000.00, 'TRANSFER', 'COMPLETED', 'Welcome bonus'),
-(1, 3, 1000.00, 'TRANSFER', 'COMPLETED', 'Welcome bonus'),
-(1, 4, 1000.00, 'TRANSFER', 'COMPLETED', 'Welcome bonus'),
-(2, 3, 500.00, 'TRANSFER', 'COMPLETED', 'Payment for services'),
-(3, 4, 250.00, 'TRANSFER', 'COMPLETED', 'Shared expenses')
-ON DUPLICATE KEY UPDATE description=description;
+-- Sample data will be initialized via API endpoint /api/data/init-sample
+-- This ensures data is only created once and can be managed programmatically

@@ -34,7 +34,17 @@
 
       <!-- Quick Actions -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div class="bg-white rounded-lg shadow-md p-6">
+        <div class="bg-white rounded-lg shadow-md p-6 relative">
+          <!-- Send Money Button -->
+          <button
+            @click="quickSendMoney"
+            class="absolute top-4 right-4 px-3 py-1 text-xs text-gray-500 hover:text-primary-600 hover:bg-primary-50 rounded-full transition-colors border border-gray-200 hover:border-primary-200"
+            title="Quick Send Money"
+          >
+            <i class="fas fa-paper-plane mr-1"></i>
+            Transfer Now
+          </button>
+          
           <div class="flex items-center">
             <div class="flex-shrink-0">
               <i class="fas fa-paper-plane text-primary-600 text-2xl"></i>
@@ -44,18 +54,19 @@
               <p class="text-gray-600 text-sm">Transfer funds to another user</p>
             </div>
           </div>
-          <div class="mt-4">
-            <router-link
-              to="/transfer"
-              class="btn-primary w-full"
-            >
-              <i class="fas fa-arrow-right mr-2"></i>
-              Transfer Now
-            </router-link>
-          </div>
         </div>
 
-        <div class="bg-white rounded-lg shadow-md p-6">
+        <div class="bg-white rounded-lg shadow-md p-6 relative">
+          <!-- Deposit Button -->
+          <button
+            @click="showDepositModal = true"
+            class="absolute top-4 right-4 px-3 py-1 text-xs text-gray-500 hover:text-green-600 hover:bg-green-50 rounded-full transition-colors border border-gray-200 hover:border-green-200"
+            title="Quick Deposit"
+          >
+            <i class="fas fa-plus mr-1"></i>
+            Deposit Now
+          </button>
+          
           <div class="flex items-center">
             <div class="flex-shrink-0">
               <i class="fas fa-plus-circle text-green-600 text-2xl"></i>
@@ -65,18 +76,19 @@
               <p class="text-gray-600 text-sm">Add money to your wallet</p>
             </div>
           </div>
-          <div class="mt-4">
-            <button
-              @click="showDepositModal = true"
-              class="btn-secondary w-full"
-            >
-              <i class="fas fa-plus mr-2"></i>
-              Deposit
-            </button>
-          </div>
         </div>
 
-        <div class="bg-white rounded-lg shadow-md p-6">
+        <div class="bg-white rounded-lg shadow-md p-6 relative">
+          <!-- Transactions Button -->
+          <router-link
+            to="/transactions"
+            class="absolute top-4 right-4 px-3 py-1 text-xs text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors border border-gray-200 hover:border-blue-200"
+            title="View All Transactions"
+          >
+            <i class="fas fa-list mr-1"></i>
+            View all
+          </router-link>
+          
           <div class="flex items-center">
             <div class="flex-shrink-0">
               <i class="fas fa-exchange-alt text-blue-600 text-2xl"></i>
@@ -86,22 +98,20 @@
               <p class="text-gray-600 text-sm">View your transaction history</p>
             </div>
           </div>
-          <div class="mt-4">
-            <router-link
-              to="/transactions"
-              class="btn-secondary w-full"
-            >
-              <i class="fas fa-list mr-2"></i>
-              View All
-            </router-link>
-          </div>
         </div>
       </div>
 
       <!-- Recent Transactions -->
       <div class="bg-white rounded-lg shadow-md">
-        <div class="px-6 py-4 border-b border-gray-200">
+        <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
           <h3 class="text-lg font-semibold text-gray-900">Recent Transactions</h3>
+          <router-link
+            to="/transactions"
+            class="text-primary-600 hover:text-primary-800 text-sm font-medium flex items-center px-3 py-1 rounded-md hover:bg-primary-50 transition-colors"
+          >
+            <i class="fas fa-external-link-alt mr-1"></i>
+            View All
+          </router-link>
         </div>
         <div class="p-6">
           <div v-if="loading" class="text-center py-8">
@@ -109,7 +119,7 @@
             <p class="text-gray-500 mt-2">Loading transactions...</p>
           </div>
           
-          <div v-else-if="transactions.length === 0" class="text-center py-8">
+          <div v-else-if="!Array.isArray(transactions) || transactions.length === 0" class="text-center py-8">
             <i class="fas fa-inbox text-4xl text-gray-300"></i>
             <p class="text-gray-500 mt-2">No transactions yet</p>
             <p class="text-gray-400 text-sm">Your transaction history will appear here</p>
@@ -151,7 +161,7 @@
             </div>
           </div>
           
-          <div v-if="transactions.length > 5" class="mt-6 text-center">
+          <div v-if="Array.isArray(transactions) && transactions.length > 5" class="mt-6 text-center">
             <router-link
               to="/transactions"
               class="text-primary-600 hover:text-primary-800 text-sm font-medium"
@@ -273,9 +283,11 @@ export default {
       loading.value = true
       try {
         const response = await transactionService.getTransactions(10)
-        transactions.value = response
+        // Ensure transactions is always an array
+        transactions.value = Array.isArray(response) ? response : []
       } catch (error) {
         console.error('Error loading transactions:', error)
+        transactions.value = []
       } finally {
         loading.value = false
       }
@@ -297,7 +309,7 @@ export default {
     }
 
     const getTransactionIcon = (transaction) => {
-      switch (transaction.transaction_type) {
+      switch (transaction.type) {
         case 'TRANSFER':
           return 'fas fa-exchange-alt'
         case 'DEPOSIT':
@@ -310,7 +322,7 @@ export default {
     }
 
     const getTransactionColor = (transaction) => {
-      switch (transaction.transaction_type) {
+      switch (transaction.type) {
         case 'TRANSFER':
           return 'text-blue-600'
         case 'DEPOSIT':
@@ -326,24 +338,35 @@ export default {
       // Determine if this is incoming or outgoing for the current user
       if (!userWallet.value) return 'text-gray-600'
       
-      const isIncoming = transaction.to_wallet_id === userWallet.value.id
-      const isOutgoing = transaction.from_wallet_id === userWallet.value.id
+      // For TRANSFER transactions, check if it's outgoing (negative) or incoming (positive)
+      if (transaction.type === 'TRANSFER') {
+        // If description contains "fee", it's likely an outgoing transfer
+        if (transaction.description && transaction.description.includes('fee')) {
+          return 'text-red-600'
+        }
+        // If description contains "from", it's likely an incoming transfer
+        if (transaction.description && transaction.description.includes('from')) {
+          return 'text-green-600'
+        }
+      }
       
-      if (isIncoming) return 'text-green-600'
-      if (isOutgoing) return 'text-red-600'
-      return 'text-gray-600'
+      // For other transaction types, they're positive
+      return 'text-green-600'
     }
 
     const formatAmount = (transaction) => {
       const amount = parseFloat(transaction.amount)
       
-      if (!userWallet.value) return `$${amount.toFixed(2)}`
+      // For TRANSFER transactions, show negative for outgoing
+      if (transaction.type === 'TRANSFER') {
+        if (transaction.description && transaction.description.includes('fee')) {
+          return `-$${amount.toFixed(2)}`
+        }
+        if (transaction.description && transaction.description.includes('from')) {
+          return `+$${amount.toFixed(2)}`
+        }
+      }
       
-      const isIncoming = transaction.to_wallet_id === userWallet.value.id
-      const isOutgoing = transaction.from_wallet_id === userWallet.value.id
-      
-      if (isIncoming) return `+$${amount.toFixed(2)}`
-      if (isOutgoing) return `-$${amount.toFixed(2)}`
       return `$${amount.toFixed(2)}`
     }
 
@@ -355,6 +378,11 @@ export default {
         hour: '2-digit',
         minute: '2-digit'
       })
+    }
+
+    const quickSendMoney = () => {
+      // Navigate to transfer page
+      window.location.href = '/transfer'
     }
 
     onMounted(async () => {
@@ -371,6 +399,7 @@ export default {
       transactions,
       depositForm,
       handleDeposit,
+      quickSendMoney,
       getTransactionIcon,
       getTransactionColor,
       getAmountColor,

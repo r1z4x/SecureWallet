@@ -13,6 +13,13 @@ export const userService = {
     return response.data
   },
 
+  async deleteAccount(password, confirm) {
+    const response = await apiClient.delete('/users/account', {
+      data: { password, confirm }
+    })
+    return response.data
+  },
+
   // Get user by ID (admin only)
   async getUser(userId) {
     const response = await apiClient.get(`/users/${userId}`)

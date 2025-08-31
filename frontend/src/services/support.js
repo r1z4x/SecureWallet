@@ -3,7 +3,7 @@ import { apiClient } from './auth'
 export const supportService = {
   // Create a new support ticket
   async createTicket(ticketData) {
-    const response = await apiClient.post('/support/ticket', ticketData)
+    const response = await apiClient.post('/support/tickets', ticketData)
     return response.data
   },
 
