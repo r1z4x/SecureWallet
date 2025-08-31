@@ -1,6 +1,25 @@
 # SecureWallet - Digital Banking Platform (Vulnerable)
 
-A comprehensive vulnerable application designed for OWASP Top 10 training and educational purposes.
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python](https://img.shields.io/badge/Python-3.12+-blue.svg)](https://www.python.org/downloads/)
+[![Node.js](https://img.shields.io/badge/Node.js-18+-green.svg)](https://nodejs.org/)
+[![Go](https://img.shields.io/badge/Go-1.23+-blue.svg)](https://golang.org/)
+[![Docker](https://img.shields.io/badge/Docker-20.10+-blue.svg)](https://www.docker.com/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.104+-green.svg)](https://fastapi.tiangolo.com/)
+[![Vue.js](https://img.shields.io/badge/Vue.js-3.4+-green.svg)](https://vuejs.org/)
+[![OWASP](https://img.shields.io/badge/OWASP-Top%2010-orange.svg)](https://owasp.org/www-project-top-ten/)
+[![Vulnerable](https://img.shields.io/badge/Vulnerable-For%20Testing-red.svg)](https://owasp.org/)
+
+A comprehensive vulnerable application designed for OWASP Top 10 training and educational purposes. This application is dedicated to **[OWASPAttackSimulator](https://github.com/r1z4x/OWASPAttackSimulator)** and has been specifically developed to work seamlessly with this security testing platform.
+
+## Purpose
+
+This application is designed to work stably with [OWASPAttackSimulator](https://github.com/r1z4x/OWASPAttackSimulator), enabling successful testing of security products and services. It provides a realistic digital banking environment with intentionally implemented vulnerabilities across all OWASP Top 10 categories, making it an ideal platform for:
+
+- **Security Product Testing**: Comprehensive evaluation of security tools and solutions
+- **Service Validation**: Testing security services and monitoring capabilities
+- **Training & Education**: Hands-on learning for security professionals
+- **Research & Development**: Development and testing of new security technologies
 
 ## 🚨 **IMPORTANT DISCLAIMER**
 
@@ -97,29 +116,13 @@ Set `VULNERABILITY_LEVEL` in your environment:
 - **hard**: Advanced scenarios requiring bypass techniques
 - **expert**: Complex chained attacks and advanced techniques
 
-## API Examples
-
-### SQL Injection
-```bash
-curl "http://localhost:8000/api/vulnerabilities/sql-injection/basic/user-search?username=admin' OR '1'='1"
-```
-
-### XSS
-```bash
-curl "http://localhost:8000/api/vulnerabilities/xss/basic/reflected?user_input=<script>alert('XSS')</script>"
-```
-
-### Command Injection
-```bash
-curl "http://localhost:8000/api/vulnerabilities/command-injection/basic/ping?host=127.0.0.1; ls -la"
-```
-
 ## License
 
 This project is licensed under the MIT License.
 
 ## Acknowledgments
 
+- **[OWASPAttackSimulator](https://github.com/r1z4x/OWASPAttackSimulator)** - This application is dedicated to and designed for OWASPAttackSimulator
 - OWASP Foundation for the OWASP Top 10
 - FastAPI for the excellent web framework
 - All contributors and security researchers
