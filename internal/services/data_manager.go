@@ -1,14 +1,13 @@
 package services
 
 import (
-	"crypto/sha1"
-	"encoding/hex"
 	"fmt"
 	"log"
 	"securewallet/internal/config"
 	"securewallet/internal/models"
 	"strings"
 
+	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
@@ -144,14 +143,13 @@ func (dm *SampleDataManager) ResetDatabase() error {
 
 // createSampleUsers creates sample users
 func (dm *SampleDataManager) createSampleUsers() error {
-	// Create users with properly hashed passwords
-	// Using SHA1 with salt as expected by the login function
-
-	// Helper function to hash password with salt
-	hashPassword := func(password string, userID uint) string {
-		salt := fmt.Sprintf("user_%d_salt", userID)
-		sha1Hash := sha1.Sum([]byte(password + salt))
-		return hex.EncodeToString(sha1Hash[:])
+	// Create users with properly hashed passwords using bcrypt
+	hashPassword := func(password string) (string, error) {
+		hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+		if err != nil {
+			return "", err
+		}
+		return string(hash), nil
 	}
 
 	// Ensure no existing users before creating new ones
@@ -183,8 +181,12 @@ func (dm *SampleDataManager) createSampleUsers() error {
 		return err
 	}
 
-	// Now hash the password with the actual user ID
-	adminUser.PasswordHash = hashPassword("admin123", adminUser.ID)
+	// Now set a secure bcrypt password
+	pw, err := hashPassword("ChangeMe_Admin#2025")
+	if err != nil {
+		return fmt.Errorf("failed to hash admin password: %v", err)
+	}
+	adminUser.PasswordHash = pw
 	if err := dm.db.Save(&adminUser).Error; err != nil {
 		log.Printf("Error updating admin password hash: %v", err)
 		return err
@@ -204,8 +206,12 @@ func (dm *SampleDataManager) createSampleUsers() error {
 		return err
 	}
 
-	// Now hash the password with the actual user ID
-	standardUser.PasswordHash = hashPassword("password123", standardUser.ID)
+	// Now set a secure bcrypt password
+	pw2, err := hashPassword("ChangeMe_User#2025")
+	if err != nil {
+		return fmt.Errorf("failed to hash user password: %v", err)
+	}
+	standardUser.PasswordHash = pw2
 	if err := dm.db.Save(&standardUser).Error; err != nil {
 		log.Printf("Error updating standard user password hash: %v", err)
 		return err
@@ -241,8 +247,12 @@ func (dm *SampleDataManager) createSampleUsers() error {
 			continue // Continue with next user instead of failing completely
 		}
 
-		// Hash the password with the actual user ID
-		user.PasswordHash = hashPassword("password123", user.ID)
+		// Set a secure bcrypt password
+		if pw3, err := hashPassword("ChangeMe_User#2025"); err == nil {
+			user.PasswordHash = pw3
+		} else {
+			log.Printf("Error hashing password for user %s: %v", username, err)
+		}
 		if err := dm.db.Save(&user).Error; err != nil {
 			log.Printf("Error updating password hash for user %s: %v", username, err)
 		}

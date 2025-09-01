@@ -148,7 +148,8 @@ export default {
         // Only generate QR code if 2FA is not enabled
         if (!response.two_factor_enabled && response.qr_code_url) {
           qrCodeUrl.value = response.qr_code_url
-          secret.value = response.secret
+          // SECURE: Don't store secret in frontend
+          // secret.value = response.secret
           
           // Generate QR code from the URL
           try {

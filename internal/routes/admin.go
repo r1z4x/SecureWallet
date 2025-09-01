@@ -2,6 +2,7 @@ package routes
 
 import (
 	"net/http"
+	"securewallet/internal/middleware"
 
 	"github.com/gin-gonic/gin"
 )
@@ -10,6 +11,10 @@ import (
 func SetupAdminRoutes(router *gin.RouterGroup) {
 	admin := router.Group("/admin")
 	{
+		// SECURE: Add authentication and admin authorization middleware
+		admin.Use(middleware.AuthMiddleware())
+		admin.Use(middleware.AdminMiddleware())
+
 		admin.GET("/dashboard", getDashboard)
 		admin.GET("/users", getAdminUsers)
 		admin.GET("/transactions", getAdminTransactions)

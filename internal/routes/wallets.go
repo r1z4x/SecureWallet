@@ -3,6 +3,7 @@ package routes
 import (
 	"fmt"
 	"net/http"
+	"strings"
 
 	"securewallet/internal/config"
 	"securewallet/internal/middleware"
@@ -41,9 +42,11 @@ type TransferRequest struct {
 
 // Transfer fee constants
 const (
-	TRANSFER_FEE_PERCENTAGE = 0.01 // 1% transfer fee
-	MIN_TRANSFER_FEE        = 1.0  // Minimum $1 fee
-	MAX_TRANSFER_FEE        = 50.0 // Maximum $50 fee
+	TRANSFER_FEE_PERCENTAGE = 0.01   // 1% transfer fee
+	MIN_TRANSFER_FEE        = 1.0    // Minimum $1 fee
+	MAX_TRANSFER_FEE        = 50.0   // Maximum $50 fee
+	MIN_TRANSFER_AMOUNT     = 1.0    // Minimum transfer amount
+	MAX_TRANSFER_AMOUNT     = 1000.0 // Maximum transfer amount
 )
 
 // deposit handles wallet deposit
@@ -123,6 +126,26 @@ func transfer(c *gin.Context) {
 	var transferReq TransferRequest
 	if err := c.ShouldBindJSON(&transferReq); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// SECURE: Validate transfer amount
+	if transferReq.Amount < MIN_TRANSFER_AMOUNT || transferReq.Amount > MAX_TRANSFER_AMOUNT {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": fmt.Sprintf("Transfer amount must be between $%.2f and $%.2f", MIN_TRANSFER_AMOUNT, MAX_TRANSFER_AMOUNT),
+		})
+		return
+	}
+
+	// SECURE: Validate recipient email format
+	if !strings.Contains(transferReq.Recipient, "@") || len(transferReq.Recipient) > 100 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid recipient email format"})
+		return
+	}
+
+	// SECURE: Validate description length
+	if len(transferReq.Description) > 255 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Description too long (max 255 characters)"})
 		return
 	}
 

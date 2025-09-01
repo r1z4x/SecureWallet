@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"securewallet/internal/config"
+	"securewallet/internal/middleware"
 	"securewallet/internal/routes"
 	"securewallet/internal/services"
 
@@ -62,10 +63,29 @@ func main() {
 
 	// CORS middleware
 	r.Use(gin.Recovery())
+	r.Use(middleware.SecurityHeadersMiddleware())
+	r.Use(middleware.InputValidationMiddleware())
 	r.Use(func(c *gin.Context) {
-		c.Header("Access-Control-Allow-Origin", "*")
+		// SECURE: Get allowed origins from environment variable
+		allowedOrigins := os.Getenv("CORS_ORIGINS")
+		origin := c.Request.Header.Get("Origin")
+
+		// SECURE: Validate origin
+		if allowedOrigins != "" && origin != "" {
+			// Simple origin validation - in production, use proper CORS library
+			if origin == "http://localhost:3000" || origin == "http://127.0.0.1:3000" {
+				c.Header("Access-Control-Allow-Origin", origin)
+			} else {
+				c.Header("Access-Control-Allow-Origin", "http://localhost:3000")
+			}
+		} else {
+			c.Header("Access-Control-Allow-Origin", "http://localhost:3000")
+		}
+
 		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 		c.Header("Access-Control-Allow-Headers", "Origin, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
+		c.Header("Access-Control-Allow-Credentials", "true")
+		c.Header("Access-Control-Max-Age", "86400") // 24 hours
 
 		if c.Request.Method == "OPTIONS" {
 			c.AbortWithStatus(204)
@@ -88,7 +108,6 @@ func main() {
 		routes.SetupAdminRoutes(api)
 		routes.SetupSupportRoutes(api)
 		routes.SetupDataManagementRoutes(api)
-		routes.SetupVulnerabilityRoutes(api)
 		routes.SetupTwoFactorRoutes(api)
 		routes.SetupLoginHistoryRoutes(api)
 	}
@@ -116,10 +135,12 @@ func main() {
 	r.GET("/api/info", func(c *gin.Context) {
 		env := os.Getenv("ENVIRONMENT")
 		if env == "" {
-			env = "development"
+			env = "production"
 		}
+
+		// SECURE: Only return minimal, non-sensitive information
 		c.JSON(200, gin.H{
-			"message":     "SecureWallet - Digital Banking Platform (Vulnerable) API",
+			"message":     "SecureWallet API",
 			"version":     "1.0.0",
 			"status":      "running",
 			"environment": env,

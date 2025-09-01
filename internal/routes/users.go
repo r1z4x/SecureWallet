@@ -1,15 +1,14 @@
 package routes
 
 import (
-	"crypto/sha1"
-	"encoding/hex"
-	"fmt"
 	"net/http"
 	"time"
 
 	"securewallet/internal/config"
 	"securewallet/internal/middleware"
 	"securewallet/internal/models"
+
+	"golang.org/x/crypto/bcrypt"
 
 	"github.com/gin-gonic/gin"
 )
@@ -35,10 +34,24 @@ func searchUsers(c *gin.Context) {
 		return
 	}
 
+	// SECURE: Input validation and sanitization
+	if len(query) < 2 || len(query) > 50 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Query must be between 2 and 50 characters"})
+		return
+	}
+
+	// SECURE: Check for potentially dangerous characters
+	for _, char := range query {
+		if char < 32 || char > 126 {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Query contains invalid characters"})
+			return
+		}
+	}
+
 	db := config.GetDB()
 	var users []models.User
 
-	// Search by username or email containing the query
+	// SECURE: Use parameterized queries to prevent SQL injection
 	if err := db.Where("username LIKE ? OR email LIKE ?", "%"+query+"%", "%"+query+"%").
 		Where("is_active = ?", true).
 		Limit(10).
@@ -101,13 +114,8 @@ func deleteCurrentUserAccount(c *gin.Context) {
 		return
 	}
 
-	// Verify password
-	userID := userData.ID
-	salt := fmt.Sprintf("user_%d_salt", userID)
-	sha1Hash := sha1.Sum([]byte(req.Password + salt))
-	inputHash := hex.EncodeToString(sha1Hash[:])
-
-	if userData.PasswordHash != inputHash {
+	// SECURE: Verify password using bcrypt
+	if err := bcrypt.CompareHashAndPassword([]byte(userData.PasswordHash), []byte(req.Password)); err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Incorrect password"})
 		return
 	}
