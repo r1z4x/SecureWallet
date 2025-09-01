@@ -7,7 +7,7 @@ USE securewallet_dev;
 
 -- Users table
 CREATE TABLE IF NOT EXISTS users (
-    id INT AUTO_INCREMENT PRIMARY KEY,
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     username VARCHAR(50) UNIQUE NOT NULL,
     email VARCHAR(100) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
@@ -23,8 +23,8 @@ CREATE TABLE IF NOT EXISTS users (
 
 -- Wallets table
 CREATE TABLE IF NOT EXISTS wallets (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NOT NULL,
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT UNSIGNED NOT NULL,                                                                           
     wallet_name VARCHAR(100) DEFAULT 'Main Wallet',
     balance DECIMAL(15,2) DEFAULT 0.00,
     currency VARCHAR(3) DEFAULT 'USD',
@@ -37,9 +37,9 @@ CREATE TABLE IF NOT EXISTS wallets (
 
 -- Transactions table
 CREATE TABLE IF NOT EXISTS transactions (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    from_wallet_id INT,
-    to_wallet_id INT,
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    from_wallet_id BIGINT UNSIGNED,
+    to_wallet_id BIGINT UNSIGNED,
     amount DECIMAL(15,2) NOT NULL,
     transaction_type ENUM('TRANSFER', 'DEPOSIT', 'WITHDRAWAL') NOT NULL,
     status ENUM('PENDING', 'COMPLETED', 'FAILED', 'CANCELLED') DEFAULT 'PENDING',
@@ -55,8 +55,8 @@ CREATE TABLE IF NOT EXISTS transactions (
 
 -- Sessions table
 CREATE TABLE IF NOT EXISTS sessions (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NOT NULL,
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT UNSIGNED NOT NULL,
     session_token VARCHAR(255) UNIQUE NOT NULL,
     expires_at TIMESTAMP NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -67,11 +67,11 @@ CREATE TABLE IF NOT EXISTS sessions (
 
 -- Audit logs table
 CREATE TABLE IF NOT EXISTS audit_logs (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT,
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT UNSIGNED,
     action VARCHAR(100) NOT NULL,
     resource_type VARCHAR(50),
-    resource_id INT,
+    resource_id BIGINT UNSIGNED,
     details JSON,
     ip_address VARCHAR(45),
     user_agent TEXT,
@@ -84,8 +84,8 @@ CREATE TABLE IF NOT EXISTS audit_logs (
 
 -- Support tickets table
 CREATE TABLE IF NOT EXISTS support_tickets (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NOT NULL,
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT UNSIGNED NOT NULL,
     subject VARCHAR(255) NOT NULL,
     message TEXT NOT NULL,
     status ENUM('open', 'in_progress', 'closed') DEFAULT 'open',
@@ -101,8 +101,8 @@ CREATE TABLE IF NOT EXISTS support_tickets (
 
 -- Login history table
 CREATE TABLE IF NOT EXISTS login_history (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NOT NULL,
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT UNSIGNED NOT NULL,
     ip_address VARCHAR(45),
     user_agent TEXT,
     status VARCHAR(20) NOT NULL,

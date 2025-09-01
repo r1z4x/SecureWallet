@@ -14,6 +14,15 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
+// GetJWTSecret returns the JWT secret from environment variable
+func GetJWTSecret() (string, error) {
+	jwtSecret := os.Getenv("JWT_SECRET_KEY")
+	if jwtSecret == "" {
+		return "", fmt.Errorf("JWT_SECRET_KEY environment variable is not set")
+	}
+	return jwtSecret, nil
+}
+
 // InitServices initializes all services
 func InitServices() {
 	// Initialize services here
@@ -39,11 +48,11 @@ func AuthenticateUser(username, password string) (*models.User, error) {
 // CreateAccessToken creates a JWT access token
 func CreateAccessToken(user *models.User) (string, error) {
 	// SECURE: Use environment variable for JWT secret and reasonable expiration
-	jwtSecret := os.Getenv("JWT_SECRET")
-	if jwtSecret == "" {
-		return "", fmt.Errorf("JWT_SECRET environment variable is not set")
+	jwtSecret, err := GetJWTSecret()
+	if err != nil {
+		return "", err
 	}
-	
+
 	// SECURE: Use environment variable for expiration time
 	expireMinutesStr := os.Getenv("ACCESS_TOKEN_EXPIRE_MINUTES")
 	expireMinutes := 30 // Default to 30 minutes if not set
@@ -68,9 +77,9 @@ func CreateAccessToken(user *models.User) (string, error) {
 // GetCurrentUser gets the current user from token
 func GetCurrentUser(tokenString string) (*models.User, error) {
 	// SECURE: Use environment variable for JWT secret
-	jwtSecret := os.Getenv("JWT_SECRET")
-	if jwtSecret == "" {
-		return nil, fmt.Errorf("JWT_SECRET environment variable is not set")
+	jwtSecret, err := GetJWTSecret()
+	if err != nil {
+		return nil, err
 	}
 
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {

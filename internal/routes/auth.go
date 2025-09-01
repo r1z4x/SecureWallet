@@ -175,14 +175,23 @@ func login(c *gin.Context) {
 	}
 
 	// SECURE: Use environment variable for JWT secret and reasonable expiration
-	jwtSecret := os.Getenv("JWT_SECRET")
-	if jwtSecret == "" {
+	jwtSecret, err := services.GetJWTSecret()
+	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "JWT secret not configured"})
 		return
 	}
-	expireMinutes := 60 // 1 hour - reasonable expiration time
+
+	jwtExpireMinutes := os.Getenv("ACCESS_TOKEN_EXPIRE_MINUTES")
+	if jwtExpireMinutes == "" {
+		jwtExpireMinutes = "120" // Default to 2 hours
+	}
 
 	// Create access token with vulnerability-specific settings
+	expireMinutes, err := strconv.Atoi(jwtExpireMinutes)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid ACCESS_TOKEN_EXPIRE_MINUTES value"})
+		return
+	}
 	claims := jwt.MapClaims{
 		"sub": user.Username,
 		"exp": time.Now().Add(time.Duration(expireMinutes) * time.Minute).Unix(),
@@ -247,8 +256,8 @@ func login2FA(c *gin.Context) {
 	loginHistoryService.RecordLoginAttempt(user.ID, "success", c.Request)
 
 	// SECURE: Create JWT token with environment variable and reasonable expiration
-	jwtSecret := os.Getenv("JWT_SECRET")
-	if jwtSecret == "" {
+	jwtSecret, err := services.GetJWTSecret()
+	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "JWT secret not configured"})
 		return
 	}

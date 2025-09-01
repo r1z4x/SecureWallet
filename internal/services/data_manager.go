@@ -182,7 +182,7 @@ func (dm *SampleDataManager) createSampleUsers() error {
 	}
 
 	// Now set a secure bcrypt password
-	pw, err := hashPassword("ChangeMe_Admin#2025")
+	pw, err := hashPassword("Admin#2025")
 	if err != nil {
 		return fmt.Errorf("failed to hash admin password: %v", err)
 	}
@@ -207,7 +207,7 @@ func (dm *SampleDataManager) createSampleUsers() error {
 	}
 
 	// Now set a secure bcrypt password
-	pw2, err := hashPassword("ChangeMe_User#2025")
+	pw2, err := hashPassword("User#2025")
 	if err != nil {
 		return fmt.Errorf("failed to hash user password: %v", err)
 	}
@@ -248,7 +248,7 @@ func (dm *SampleDataManager) createSampleUsers() error {
 		}
 
 		// Set a secure bcrypt password
-		if pw3, err := hashPassword("ChangeMe_User#2025"); err == nil {
+		if pw3, err := hashPassword("User#2025"); err == nil {
 			user.PasswordHash = pw3
 		} else {
 			log.Printf("Error hashing password for user %s: %v", username, err)

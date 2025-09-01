@@ -64,7 +64,7 @@ services:
       - DB_HOST=mysql
       - DB_PORT=3306
       - DB_USER=securewallet_dev
-      - DB_PASSWORD=securewalletpass_dev
+      - DB_PASSWORD=${MYSQL_PASSWORD:-securewalletpass_dev}
       - DB_NAME=securewallet_dev
       - REDIS_HOST=redis
       - REDIS_PORT=6379
@@ -72,6 +72,9 @@ services:
       - ENVIRONMENT=development
       - GIN_MODE=debug
       - RESET_DATABASE_ON_STARTUP=${RESET_DATABASE_ON_STARTUP:-false}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-CHANGE_THIS_DEV_JWT_SECRET_KEY}
+      - JWT_ALGORITHM=HS256
+      - ACCESS_TOKEN_EXPIRE_MINUTES=30
     depends_on:
       - mysql
       - mongodb

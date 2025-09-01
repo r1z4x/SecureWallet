@@ -31,9 +31,13 @@ api.interceptors.response.use(
     return response
   },
   (error) => {
+    // Only redirect on 401 if we're not already on login page
     if (error.response && error.response.status === 401) {
       localStorage.removeItem('token')
-      window.location.href = '/auth/login'
+      // Don't redirect if we're already on login page to prevent infinite loops
+      if (!window.location.pathname.includes('/login')) {
+        window.location.href = '/login'
+      }
     }
     return Promise.reject(error)
   }

@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"net/http"
+	"os"
 	"sync"
 	"time"
 
@@ -17,6 +18,12 @@ var (
 // RateLimitMiddleware provides basic rate limiting
 func RateLimitMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		// Skip rate limiting in development mode
+		if os.Getenv("ENVIRONMENT") == "development" || os.Getenv("GIN_MODE") == "debug" {
+			c.Next()
+			return
+		}
+
 		ip := c.ClientIP()
 
 		rateLimitMutex.Lock()

@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"os"
+	"strings"
 	"time"
 
 	"securewallet/internal/config"
@@ -70,15 +71,23 @@ func main() {
 		allowedOrigins := os.Getenv("CORS_ORIGINS")
 		origin := c.Request.Header.Get("Origin")
 
-		// SECURE: Validate origin
+		// SECURE: Validate origin against allowed origins
 		if allowedOrigins != "" && origin != "" {
-			// Simple origin validation - in production, use proper CORS library
-			if origin == "http://localhost:3000" || origin == "http://127.0.0.1:3000" {
-				c.Header("Access-Control-Allow-Origin", origin)
-			} else {
-				c.Header("Access-Control-Allow-Origin", "http://localhost:3000")
+			// Parse the JSON array from environment variable
+			// Remove brackets and split by comma
+			originsStr := strings.Trim(allowedOrigins, "[]")
+			origins := strings.Split(originsStr, ",")
+
+			// Check if origin is in allowed list
+			for _, allowedOrigin := range origins {
+				allowedOrigin = strings.Trim(allowedOrigin, `" `)
+				if origin == allowedOrigin {
+					c.Header("Access-Control-Allow-Origin", origin)
+					break
+				}
 			}
 		} else {
+			// Fallback to default
 			c.Header("Access-Control-Allow-Origin", "http://localhost:3000")
 		}
 
