@@ -5,15 +5,15 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <!-- Header -->
       <div class="mb-8">
-        <h1 class="text-3xl font-bold text-gray-900">Transaction History</h1>
-        <p class="text-gray-600 mt-2">View and manage your financial transactions</p>
+        <h1 class="text-3xl font-bold text-gray-900">{{ $t('transactions.title') }}</h1>
+                  <p class="text-gray-600 mt-2">{{ $t('transactions.subtitle') }}</p>
       </div>
 
       <!-- Filters and Search -->
       <div class="bg-white rounded-lg shadow-md p-6 mb-8">
         <div class="mb-4">
-          <h3 class="text-lg font-semibold text-gray-900 mb-2">Filters</h3>
-          <p class="text-sm text-gray-600">Filter your transactions by type, status, date range, or search terms</p>
+          <h3 class="text-lg font-semibold text-gray-900 mb-2">{{ $t('transactions.filters') }}</h3>
+          <p class="text-sm text-gray-600">{{ $t('transactions.filtersDescription') }}</p>
         </div>
         
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -21,7 +21,7 @@
           <div class="space-y-2">
             <label class="block text-sm font-medium text-gray-700">
               <i class="fas fa-filter mr-2 text-gray-400"></i>
-              Transaction Type
+              {{ $t('transactions.transactionType') }}
             </label>
             <div class="relative">
               <select
@@ -29,10 +29,10 @@
                 class="form-select"
                 @change="loadTransactions"
               >
-                <option value="">All Types</option>
-                <option value="TRANSFER">Transfer</option>
-                <option value="DEPOSIT">Deposit</option>
-                <option value="WITHDRAWAL">Withdrawal</option>
+                <option value="">{{ $t('transactions.allTypes') }}</option>
+                <option value="TRANSFER">{{ $t('transactions.transfer') }}</option>
+                <option value="DEPOSIT">{{ $t('transactions.deposit') }}</option>
+                <option value="WITHDRAWAL">{{ $t('transactions.withdrawal') }}</option>
               </select>
               <div class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
                 <i class="fas fa-chevron-down text-gray-400 text-xs"></i>
@@ -44,7 +44,7 @@
           <div class="space-y-2">
             <label class="block text-sm font-medium text-gray-700">
               <i class="fas fa-circle mr-2 text-gray-400"></i>
-              Status
+              {{ $t('transactions.status') }}
             </label>
             <div class="relative">
               <select
@@ -52,10 +52,10 @@
                 class="form-select"
                 @change="loadTransactions"
               >
-                <option value="">All Status</option>
-                <option value="COMPLETED">Completed</option>
-                <option value="PENDING">Pending</option>
-                <option value="FAILED">Failed</option>
+                <option value="">{{ $t('transactions.allStatus') }}</option>
+                <option value="COMPLETED">{{ $t('transactions.completed') }}</option>
+                <option value="PENDING">{{ $t('transactions.pending') }}</option>
+                <option value="FAILED">{{ $t('transactions.failed') }}</option>
               </select>
               <div class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
                 <i class="fas fa-chevron-down text-gray-400 text-xs"></i>
@@ -67,7 +67,7 @@
           <div class="space-y-2">
             <label class="block text-sm font-medium text-gray-700">
               <i class="fas fa-calendar mr-2 text-gray-400"></i>
-              Date Range
+              {{ $t('transactions.dateRange') }}
             </label>
             <div class="relative">
               <select
@@ -75,11 +75,11 @@
                 class="form-select"
                 @change="loadTransactions"
               >
-                <option value="7">Last 7 days</option>
-                <option value="30">Last 30 days</option>
-                <option value="90">Last 90 days</option>
-                <option value="365">Last year</option>
-                <option value="all">All time</option>
+                <option value="7">{{ $t('transactions.last7Days') }}</option>
+                <option value="30">{{ $t('transactions.last30Days') }}</option>
+                <option value="90">{{ $t('transactions.last90Days') }}</option>
+                <option value="365">{{ $t('transactions.lastYear') }}</option>
+                <option value="all">{{ $t('transactions.allTime') }}</option>
               </select>
               <div class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
                 <i class="fas fa-chevron-down text-gray-400 text-xs"></i>
@@ -91,14 +91,14 @@
           <div class="space-y-2">
             <label class="block text-sm font-medium text-gray-700">
               <i class="fas fa-search mr-2 text-gray-400"></i>
-              Search
+              {{ $t('transactions.search') }}
             </label>
             <div class="relative">
               <input
                 v-model="filters.search"
                 type="text"
                 class="form-input pl-10"
-                placeholder="Search transactions..."
+                :placeholder="$t('transactions.searchPlaceholder')"
                 @input="debounceSearch"
               >
               <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
@@ -115,7 +115,7 @@
             class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors"
           >
             <i class="fas fa-times mr-2"></i>
-            Clear Filters
+            {{ $t('transactions.clearFilters') }}
           </button>
         </div>
       </div>
@@ -128,7 +128,7 @@
               <i class="fas fa-exchange-alt text-blue-600 text-2xl"></i>
             </div>
             <div class="ml-4">
-              <p class="text-sm font-medium text-gray-600">Total Transactions</p>
+              <p class="text-sm font-medium text-gray-600">{{ $t('transactions.totalTransactions') }}</p>
               <p class="text-2xl font-bold text-gray-900">{{ summary.total }}</p>
             </div>
           </div>
@@ -140,7 +140,7 @@
               <i class="fas fa-plus-circle text-green-600 text-2xl"></i>
             </div>
             <div class="ml-4">
-              <p class="text-sm font-medium text-gray-600">Total Incoming</p>
+              <p class="text-sm font-medium text-gray-600">{{ $t('transactions.totalIncoming') }}</p>
               <p class="text-2xl font-bold text-green-600">${{ summary.incoming?.toFixed(2) || '0.00' }}</p>
             </div>
           </div>
@@ -152,7 +152,7 @@
               <i class="fas fa-minus-circle text-red-600 text-2xl"></i>
             </div>
             <div class="ml-4">
-              <p class="text-sm font-medium text-gray-600">Total Outgoing</p>
+              <p class="text-sm font-medium text-gray-600">{{ $t('transactions.totalOutgoing') }}</p>
               <p class="text-2xl font-bold text-red-600">${{ summary.outgoing?.toFixed(2) || '0.00' }}</p>
             </div>
           </div>
@@ -164,7 +164,7 @@
               <i class="fas fa-chart-line text-purple-600 text-2xl"></i>
             </div>
             <div class="ml-4">
-              <p class="text-sm font-medium text-gray-600">Net Flow</p>
+              <p class="text-sm font-medium text-gray-600">{{ $t('transactions.netFlow') }}</p>
               <p class="text-2xl font-bold" :class="summary.net >= 0 ? 'text-green-600' : 'text-red-600'">
                 ${{ summary.net?.toFixed(2) || '0.00' }}
               </p>
@@ -178,7 +178,7 @@
         <div class="px-6 py-4 border-b border-gray-200">
           <div class="flex justify-between items-center">
             <h3 class="text-lg font-semibold text-gray-900">
-              Transactions ({{ transactions.length }})
+              {{ $t('transactions.transactions') }} ({{ transactions.length }})
             </h3>
             <div class="flex space-x-2">
               <button
@@ -187,7 +187,7 @@
                 :disabled="transactions.length === 0"
               >
                 <i class="fas fa-download mr-2"></i>
-                Export
+                {{ $t('transactions.export') }}
               </button>
             </div>
           </div>
@@ -196,13 +196,13 @@
         <div class="p-6">
           <div v-if="loading" class="text-center py-8">
             <i class="fas fa-spinner fa-spin text-2xl text-gray-400"></i>
-            <p class="text-gray-500 mt-2">Loading transactions...</p>
+            <p class="text-gray-500 mt-2">{{ $t('transactions.loadingTransactions') }}</p>
           </div>
           
           <div v-else-if="transactions.length === 0" class="text-center py-8">
             <i class="fas fa-inbox text-4xl text-gray-300"></i>
-            <p class="text-gray-500 mt-2">No transactions found</p>
-            <p class="text-gray-400 text-sm">Try adjusting your filters or make your first transaction</p>
+            <p class="text-gray-500 mt-2">{{ $t('transactions.noTransactionsFound') }}</p>
+            <p class="text-gray-400 text-sm">{{ $t('transactions.tryAdjustingFilters') }}</p>
           </div>
           
           <div v-else class="space-y-4">
@@ -249,7 +249,7 @@
                 :disabled="currentPage === 1"
                 class="px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Previous
+                {{ $t('transactions.previous') }}
               </button>
               
               <button
@@ -271,7 +271,7 @@
                 :disabled="currentPage === totalPages"
                 class="px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Next
+                {{ $t('transactions.next') }}
               </button>
             </nav>
           </div>

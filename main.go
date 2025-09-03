@@ -87,6 +87,9 @@ func main() {
 		allowedOrigins := os.Getenv("CORS_ORIGINS")
 		origin := c.Request.Header.Get("Origin")
 
+		// Debug logging
+		log.Printf("CORS Debug - Origin: %s, AllowedOrigins: %s", origin, allowedOrigins)
+
 		// SECURE: Validate origin against allowed origins
 		if allowedOrigins != "" && origin != "" {
 			// Parse the JSON array from environment variable
@@ -97,14 +100,22 @@ func main() {
 			// Check if origin is in allowed list
 			for _, allowedOrigin := range origins {
 				allowedOrigin = strings.Trim(allowedOrigin, `" `)
+				log.Printf("CORS Debug - Checking origin: %s against allowed: %s", origin, allowedOrigin)
 				if origin == allowedOrigin {
 					c.Header("Access-Control-Allow-Origin", origin)
+					log.Printf("CORS Debug - Origin allowed: %s", origin)
 					break
 				}
 			}
 		} else {
-			// Fallback to default
-			c.Header("Access-Control-Allow-Origin", "http://localhost:3000")
+			// Fallback to default - include both common ports
+			if origin == "http://localhost:3001" || origin == "http://127.0.0.1:3001" {
+				c.Header("Access-Control-Allow-Origin", origin)
+				log.Printf("CORS Debug - Fallback origin allowed: %s", origin)
+			} else {
+				c.Header("Access-Control-Allow-Origin", "http://localhost:3000")
+				log.Printf("CORS Debug - Default origin set: http://localhost:3000")
+			}
 		}
 
 		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
@@ -144,6 +155,15 @@ func main() {
 			"version": "1.0.0",
 			"docs":    "/swagger/index.html",
 			"health":  "/health",
+		})
+	})
+
+	// Test CORS endpoint
+	r.GET("/test-cors", func(c *gin.Context) {
+		c.JSON(200, gin.H{
+			"message":      "CORS test successful",
+			"origin":       c.Request.Header.Get("Origin"),
+			"cors_working": true,
 		})
 	})
 

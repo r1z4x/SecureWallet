@@ -6,25 +6,25 @@
       <!-- Welcome Section -->
       <div class="mb-8">
         <h1 class="text-3xl font-bold text-gray-900">
-          Welcome back, {{ user?.username || user?.email || 'User' }}!
+          {{ $t('dashboard.welcomeBack') }}, {{ isUserLoaded ? (user?.username || user?.email || $t('common.user')) : $t('common.loading') }}!
         </h1>
-        <p class="text-gray-600 mt-2">Here's your financial overview</p>
+        <p class="text-gray-600 mt-2">{{ $t('dashboard.financialOverview') }}</p>
       </div>
 
       <!-- Balance Card -->
       <div class="bg-white rounded-lg shadow-md p-6 mb-8">
         <div class="flex items-center justify-between">
           <div>
-            <h2 class="text-lg font-semibold text-gray-900">Current Balance</h2>
+            <h2 class="text-lg font-semibold text-gray-900">{{ $t('dashboard.currentBalance') }}</h2>
             <p class="text-3xl font-bold text-primary-600">
               ${{ walletData.balance?.toFixed(2) || '0.00' }}
             </p>
             <p class="text-sm text-gray-500 mt-1">
-              {{ walletData.transaction_count || 0 }} transactions total
+              {{ walletData.transaction_count || 0 }} {{ $t('dashboard.transactionsTotal') }}
             </p>
           </div>
           <div class="text-right">
-            <div class="text-sm text-gray-500">Currency</div>
+            <div class="text-sm text-gray-500">{{ $t('dashboard.currency') }}</div>
             <div class="text-lg font-semibold text-gray-900">
               {{ walletData.currency || 'USD' }}
             </div>
@@ -39,10 +39,10 @@
           <button
             @click="quickSendMoney"
             class="absolute top-4 right-4 px-3 py-1 text-xs text-gray-500 hover:text-primary-600 hover:bg-primary-50 rounded-full transition-colors border border-gray-200 hover:border-primary-200"
-            title="Quick Send Money"
+            :title="$t('dashboard.quickSendMoney')"
           >
             <i class="fas fa-paper-plane mr-1"></i>
-            Transfer Now
+            {{ $t('dashboard.transferNow') }}
           </button>
           
           <div class="flex items-center">
@@ -50,8 +50,8 @@
               <i class="fas fa-paper-plane text-primary-600 text-2xl"></i>
             </div>
             <div class="ml-4">
-              <h3 class="text-lg font-semibold text-gray-900">Send Money</h3>
-              <p class="text-gray-600 text-sm">Transfer funds to another user</p>
+              <h3 class="text-lg font-semibold text-gray-900">{{ $t('dashboard.sendMoney') }}</h3>
+              <p class="text-gray-600 text-sm">{{ $t('dashboard.transferFundsDescription') }}</p>
             </div>
           </div>
         </div>
@@ -64,7 +64,7 @@
             title="Quick Deposit"
           >
             <i class="fas fa-plus mr-1"></i>
-            Deposit Now
+            {{ $t('dashboard.depositNow') }}
           </button>
           
           <div class="flex items-center">
@@ -72,8 +72,8 @@
               <i class="fas fa-plus-circle text-green-600 text-2xl"></i>
             </div>
             <div class="ml-4">
-              <h3 class="text-lg font-semibold text-gray-900">Deposit</h3>
-              <p class="text-gray-600 text-sm">Add money to your wallet</p>
+              <h3 class="text-lg font-semibold text-gray-900">{{ $t('dashboard.deposit') }}</h3>
+              <p class="text-gray-600 text-sm">{{ $t('dashboard.addMoneyToWallet') }}</p>
             </div>
           </div>
         </div>
@@ -83,10 +83,10 @@
           <router-link
             to="/transactions"
             class="absolute top-4 right-4 px-3 py-1 text-xs text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors border border-gray-200 hover:border-blue-200"
-            title="View All Transactions"
+            :title="$t('dashboard.viewAllTransactions')"
           >
             <i class="fas fa-list mr-1"></i>
-            View all
+            {{ $t('dashboard.viewAll') }}
           </router-link>
           
           <div class="flex items-center">
@@ -95,7 +95,7 @@
             </div>
             <div class="ml-4">
               <h3 class="text-lg font-semibold text-gray-900">Transactions</h3>
-              <p class="text-gray-600 text-sm">View your transaction history</p>
+              <p class="text-gray-600 text-sm">{{ $t('dashboard.viewTransactionHistory') }}</p>
             </div>
           </div>
         </div>
@@ -104,25 +104,25 @@
       <!-- Recent Transactions -->
       <div class="bg-white rounded-lg shadow-md">
         <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-          <h3 class="text-lg font-semibold text-gray-900">Recent Transactions</h3>
+          <h3 class="text-lg font-semibold text-gray-900">{{ $t('dashboard.recentTransactions') }}</h3>
           <router-link
             to="/transactions"
             class="text-primary-600 hover:text-primary-800 text-sm font-medium flex items-center px-3 py-1 rounded-md hover:bg-primary-50 transition-colors"
           >
             <i class="fas fa-external-link-alt mr-1"></i>
-            View All
+            {{ $t('dashboard.viewAll') }}
           </router-link>
         </div>
         <div class="p-6">
           <div v-if="loading" class="text-center py-8">
             <i class="fas fa-spinner fa-spin text-2xl text-gray-400"></i>
-            <p class="text-gray-500 mt-2">Loading transactions...</p>
+            <p class="text-gray-500 mt-2">{{ $t('dashboard.loadingTransactions') }}</p>
           </div>
           
           <div v-else-if="!Array.isArray(transactions) || transactions.length === 0" class="text-center py-8">
             <i class="fas fa-inbox text-4xl text-gray-300"></i>
-            <p class="text-gray-500 mt-2">No transactions yet</p>
-            <p class="text-gray-400 text-sm">Your transaction history will appear here</p>
+            <p class="text-gray-500 mt-2">{{ $t('dashboard.noTransactionsYet') }}</p>
+            <p class="text-gray-400 text-sm">{{ $t('dashboard.transactionHistoryWillAppear') }}</p>
           </div>
           
           <div v-else class="space-y-4">
@@ -140,7 +140,7 @@
                 </div>
                 <div class="ml-4">
                   <p class="text-sm font-medium text-gray-900">
-                    {{ transaction.description || 'Transaction' }}
+                    {{ transaction.description || $t('dashboard.transaction') }}
                   </p>
                   <p class="text-xs text-gray-500">
                     {{ formatDate(transaction.created_at) }}
@@ -166,7 +166,7 @@
               to="/transactions"
               class="text-primary-600 hover:text-primary-800 text-sm font-medium"
             >
-              View all transactions →
+              {{ $t('dashboard.viewAllTransactions') }} →
             </router-link>
           </div>
         </div>
@@ -181,11 +181,11 @@
     >
       <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white" @click.stop>
         <div class="mt-3">
-          <h3 class="text-lg font-semibold text-gray-900 mb-4">Deposit Funds</h3>
+          <h3 class="text-lg font-semibold text-gray-900 mb-4">{{ $t('dashboard.depositFunds') }}</h3>
           <form @submit.prevent="handleDeposit">
             <div class="mb-4">
               <label class="block text-sm font-medium text-gray-700 mb-2">
-                Amount
+                {{ $t('common.amount') }}
               </label>
               <input
                 v-model="depositForm.amount"
@@ -193,13 +193,13 @@
                 step="0.01"
                 min="0.01"
                 class="form-input w-full"
-                placeholder="Enter amount"
+                :placeholder="$t('dashboard.enterAmount')"
                 required
               >
             </div>
             <div class="mb-4">
               <label class="block text-sm font-medium text-gray-700 mb-2">
-                Description (Optional)
+                {{ $t('dashboard.descriptionOptional') }}
               </label>
               <input
                 v-model="depositForm.description"
@@ -214,7 +214,7 @@
                 @click="showDepositModal = false"
                 class="btn-secondary"
               >
-                Cancel
+                {{ $t('common.cancel') }}
               </button>
               <button
                 type="submit"
@@ -222,7 +222,7 @@
                 :disabled="depositLoading"
               >
                 <i v-if="depositLoading" class="fas fa-spinner fa-spin mr-2"></i>
-                {{ depositLoading ? 'Processing...' : 'Deposit' }}
+                {{ depositLoading ? $t('dashboard.processing') : $t('dashboard.deposit') }}
               </button>
             </div>
           </form>
@@ -233,7 +233,7 @@
 </template>
 
 <script>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import Navigation from '@/components/Navigation.vue'
 import { walletService } from '@/services/wallet'
@@ -247,6 +247,7 @@ export default {
   setup() {
     const authStore = useAuthStore()
     const user = computed(() => authStore.user)
+    const isUserLoaded = computed(() => authStore.isUserLoaded)
     
     const loading = ref(false)
     const depositLoading = ref(false)
@@ -386,12 +387,32 @@ export default {
     }
 
     onMounted(async () => {
-      await loadWalletData()
-      await loadTransactions()
+      // Wait for user data to be loaded
+      if (!isUserLoaded.value) {
+
+        await new Promise(resolve => {
+          const unwatch = watch(isUserLoaded, (loaded) => {
+            if (loaded) {
+              unwatch()
+              resolve()
+            }
+          }, { immediate: true })
+        })
+      }
+      
+      // Ensure user data is available before loading other data
+      if (user.value) {
+
+        await loadWalletData()
+        await loadTransactions()
+      } else {
+
+      }
     })
 
     return {
       user,
+      isUserLoaded,
       loading,
       depositLoading,
       showDepositModal,

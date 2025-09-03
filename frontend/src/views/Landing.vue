@@ -6,14 +6,15 @@
         <div class="flex justify-between items-center py-6">
           <div class="flex items-center">
             <i class="fas fa-wallet text-primary-600 text-3xl mr-3"></i>
-            <h1 class="text-2xl font-bold text-gray-900">SecureWallet <sup class="text-red-500 text-xs">(Vulnerable)</sup></h1>
+            <h1 class="text-2xl font-bold text-gray-900">{{ $t('common.appName') }} <sup class="text-red-500 text-xs">{{ $t('common.vulnerable') }}</sup></h1>
           </div>
-          <div class="flex space-x-4">
+          <div class="flex items-center space-x-4">
+            <LanguageSelector />
             <router-link to="/auth/login" class="btn-primary">
-              <i class="fas fa-sign-in-alt mr-2"></i>Sign In
+              <i class="fas fa-sign-in-alt mr-2"></i>{{ $t('auth.signIn') }}
             </router-link>
             <router-link to="/auth/register" class="btn-secondary">
-              <i class="fas fa-user-plus mr-2"></i>Create Account
+              <i class="fas fa-user-plus mr-2"></i>{{ $t('auth.register') }}
             </router-link>
           </div>
         </div>
@@ -26,20 +27,19 @@
         <div class="mb-12">
           <i class="fas fa-wallet text-primary-600 text-8xl mb-8"></i>
           <h1 class="text-5xl font-bold text-gray-900 mb-6">
-            Welcome to SecureWallet <sup class="text-red-500 text-xs">(Vulnerable)</sup>
+            {{ $t('landing.welcomeTitle') }} {{ $t('common.appName') }} <sup class="text-red-500 text-xs">{{ $t('common.vulnerable') }}</sup>
           </h1>
           <p class="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
-            Your secure digital wallet for fast and reliable transactions. 
-            Experience the future of banking with cutting-edge security and seamless user experience.
+            {{ $t('landing.welcomeSubtitle') }}
           </p>
         </div>
 
         <div class="flex justify-center space-x-6 mb-16">
           <router-link to="/auth/login" class="btn-primary text-lg px-8 py-4">
-            <i class="fas fa-sign-in-alt mr-2"></i>Get Started
+            <i class="fas fa-sign-in-alt mr-2"></i>{{ $t('landing.getStarted') }}
           </router-link>
           <router-link to="/auth/register" class="btn-secondary text-lg px-8 py-4">
-            <i class="fas fa-user-plus mr-2"></i>Create Account
+            <i class="fas fa-user-plus mr-2"></i>{{ $t('auth.register') }}
           </router-link>
         </div>
 
@@ -47,25 +47,25 @@
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mt-20">
           <div class="card text-center">
             <i class="fas fa-shield-alt text-primary-600 text-4xl mb-4"></i>
-            <h3 class="text-xl font-bold text-gray-900 mb-2">Secure Banking</h3>
+            <h3 class="text-xl font-bold text-gray-900 mb-2">{{ $t('landing.features.secureBanking.title') }}</h3>
             <p class="text-gray-600">
-              Bank-grade security with end-to-end encryption to protect your financial data.
+              {{ $t('landing.features.secureBanking.description') }}
             </p>
           </div>
           
           <div class="card text-center">
             <i class="fas fa-bolt text-primary-600 text-4xl mb-4"></i>
-            <h3 class="text-xl font-bold text-gray-900 mb-2">Fast Transactions</h3>
+            <h3 class="text-xl font-bold text-gray-900 mb-2">{{ $t('landing.features.fastTransactions.title') }}</h3>
             <p class="text-gray-600">
-              Instant money transfers and real-time transaction processing.
+              {{ $t('landing.features.fastTransactions.description') }}
             </p>
           </div>
           
           <div class="card text-center">
             <i class="fas fa-mobile-alt text-primary-600 text-4xl mb-4"></i>
-            <h3 class="text-xl font-bold text-gray-900 mb-2">Mobile First</h3>
+            <h3 class="text-xl font-bold text-gray-900 mb-2">{{ $t('landing.features.mobileFirst.title') }}</h3>
             <p class="text-gray-600">
-              Optimized for mobile devices with responsive design and intuitive interface.
+              {{ $t('landing.features.mobileFirst.description') }}
             </p>
           </div>
         </div>
@@ -79,10 +79,10 @@
           <div class="col-span-1 md:col-span-2">
             <div class="flex items-center mb-4">
               <i class="fas fa-wallet text-primary-400 text-2xl mr-2"></i>
-              <span class="text-xl font-bold">SecureWallet <sup class="text-red-400 text-xs">(Vulnerable)</sup></span>
+              <span class="text-xl font-bold">{{ $t('common.appName') }} <sup class="text-red-400 text-xs">{{ $t('common.vulnerable') }}</sup></span>
             </div>
             <p class="text-gray-300 mb-4">
-              Your secure digital wallet for fast and reliable transactions. Experience the future of banking with cutting-edge security.
+              {{ $t('landing.footerDescription') }}
             </p>
             <div class="flex space-x-4">
               <a href="#" class="text-gray-400 hover:text-white">
@@ -98,42 +98,42 @@
           </div>
           
           <div>
-            <h3 class="text-lg font-semibold mb-4">Quick Links</h3>
+            <h3 class="text-lg font-semibold mb-4">{{ $t('landing.quickLinks') }}</h3>
             <ul class="space-y-2">
               <li>
                 <router-link to="/help" class="text-gray-300 hover:text-white">
-                  Help Center
+                  {{ $t('landing.helpCenter') }}
                 </router-link>
               </li>
               <li>
                 <router-link to="/support" class="text-gray-300 hover:text-white">
-                  Contact Support
+                  {{ $t('landing.contactSupport') }}
                 </router-link>
               </li>
               <li>
                 <a href="#" class="text-gray-300 hover:text-white">
-                  About Us
+                  {{ $t('landing.aboutUs') }}
                 </a>
               </li>
             </ul>
           </div>
           
           <div>
-            <h3 class="text-lg font-semibold mb-4">Legal</h3>
+            <h3 class="text-lg font-semibold mb-4">{{ $t('landing.legal') }}</h3>
             <ul class="space-y-2">
               <li>
                 <router-link to="/terms" class="text-gray-300 hover:text-white">
-                  Terms of Service
+                  {{ $t('landing.termsOfService') }}
                 </router-link>
               </li>
               <li>
                 <a href="#" class="text-gray-300 hover:text-white">
-                  Privacy Policy
+                  {{ $t('landing.privacyPolicy') }}
                 </a>
               </li>
               <li>
                 <a href="#" class="text-gray-300 hover:text-white">
-                  Cookie Policy
+                  {{ $t('landing.cookiePolicy') }}
                 </a>
               </li>
             </ul>
@@ -142,7 +142,7 @@
         
         <div class="border-t border-gray-700 mt-8 pt-8 text-center">
           <p class="text-gray-400">
-            © 2024 SecureWallet. All rights reserved. This is a vulnerable application for educational purposes.
+            {{ $t('landing.copyright') }}
           </p>
         </div>
       </div>
@@ -151,7 +151,12 @@
 </template>
 
 <script>
+import LanguageSelector from '@/components/LanguageSelector.vue'
+
 export default {
-  name: 'Landing'
+  name: 'Landing',
+  components: {
+    LanguageSelector
+  }
 }
 </script>

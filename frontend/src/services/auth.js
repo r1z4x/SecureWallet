@@ -25,23 +25,7 @@ api.interceptors.request.use(
   }
 )
 
-// Response interceptor to handle auth errors
-api.interceptors.response.use(
-  (response) => {
-    return response
-  },
-  (error) => {
-    // Only redirect on 401 if we're not already on login page
-    if (error.response && error.response.status === 401) {
-      localStorage.removeItem('token')
-      // Don't redirect if we're already on login page to prevent infinite loops
-      if (!window.location.pathname.includes('/login')) {
-        window.location.href = '/login'
-      }
-    }
-    return Promise.reject(error)
-  }
-)
+// Response interceptor removed - router guard handles auth redirects
 
 export const authService = {
   async login(credentials) {

@@ -384,7 +384,7 @@ func (dm *SampleDataManager) CreateSampleUsers() error {
 		// Set a secure bcrypt password
 		randomUserPassword := os.Getenv("RANDOM_USER_PASSWORD")
 		if randomUserPassword == "" {
-			randomUserPassword = "ChangeMe_User#2025" // Default fallback
+			randomUserPassword = "User#2025" // Default fallback
 		}
 		if pw3, err := hashPassword(randomUserPassword); err == nil {
 			user.PasswordHash = pw3

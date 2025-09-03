@@ -5,7 +5,7 @@
         <div class="flex">
           <div class="flex-shrink-0 flex items-center">
             <i class="fas fa-wallet text-primary-600 text-2xl mr-2"></i>
-            <span class="text-xl font-bold text-gray-900">SecureWallet <sup class="text-red-500 text-xs">(Vulnerable)</sup></span>
+            <span class="text-xl font-bold text-gray-900">{{ $t('common.appName') }} <sup class="text-red-500 text-xs">{{ $t('common.vulnerable') }}</sup></span>
           </div>
           
           <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
@@ -15,7 +15,7 @@
               :class="{ 'active': $route.path === '/dashboard' }"
             >
               <i class="fas fa-tachometer-alt mr-2"></i>
-              Dashboard
+              {{ $t('nav.dashboard') }}
             </router-link>
             
             <router-link
@@ -24,7 +24,7 @@
               :class="{ 'active': $route.path === '/wallet' }"
             >
               <i class="fas fa-wallet mr-2"></i>
-              Wallet
+              {{ $t('nav.wallet') }}
             </router-link>
             
             <router-link
@@ -33,7 +33,7 @@
               :class="{ 'active': $route.path === '/transactions' }"
             >
               <i class="fas fa-exchange-alt mr-2"></i>
-              Transactions
+              {{ $t('nav.transactions') }}
             </router-link>
             
             <router-link
@@ -42,7 +42,7 @@
               :class="{ 'active': $route.path === '/transfer' }"
             >
               <i class="fas fa-paper-plane mr-2"></i>
-              Transfer
+              {{ $t('nav.transfer') }}
             </router-link>
             
 
@@ -54,14 +54,63 @@
               :class="{ 'active': $route.path === '/admin' }"
             >
               <i class="fas fa-shield-alt mr-2"></i>
-              Admin
+              {{ $t('nav.admin') }}
             </router-link>
             
 
           </div>
         </div>
         
-        <div class="flex items-center">
+        <div class="flex items-center space-x-4">
+          <!-- Language Selector -->
+          <div class="relative">
+            <button
+              @click="toggleLanguageDropdown"
+              class="flex items-center justify-center w-8 h-8 rounded-full hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
+              :title="getLanguageName(currentLocale)"
+            >
+              <img
+                :src="getFlagIcon(currentLocale)"
+                :alt="getLanguageName(currentLocale)"
+                class="w-6 h-6 rounded-full object-cover shadow-sm"
+              />
+            </button>
+
+            <!-- Language Dropdown -->
+            <div
+              v-if="languageDropdownOpen"
+              class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-50 border border-gray-200"
+            >
+              <div class="py-1">
+                <button
+                  v-for="locale in availableLocales"
+                  :key="locale.code"
+                  @click="changeLanguage(locale.code)"
+                  class="flex items-center space-x-3 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                  :class="{ 'bg-indigo-50 text-indigo-700': currentLocale === locale.code }"
+                >
+                  <span class="w-5 h-5 rounded-full overflow-hidden">
+                    <img
+                      :src="locale.flag"
+                      :alt="locale.name"
+                      class="w-full h-full object-cover"
+                    />
+                  </span>
+                  <span>{{ locale.name }}</span>
+                  <span v-if="currentLocale === locale.code" class="text-indigo-600">
+                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                      <path
+                        fill-rule="evenodd"
+                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                        clip-rule="evenodd"
+                      />
+                    </svg>
+                  </span>
+                </button>
+              </div>
+            </div>
+          </div>
+
           <!-- Desktop User Dropdown -->
           <div class="hidden sm:flex sm:items-center">
             <div class="flex-shrink-0 relative">
@@ -70,7 +119,7 @@
                   @click="toggleUserDropdown"
                   class="flex items-center text-sm text-gray-600 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 rounded-md p-2"
                 >
-                  <span class="mr-2">Welcome, {{ user?.username || user?.email || 'User' }}</span>
+                  <span class="mr-2">{{ $t('common.welcome') }}, {{ user?.username || user?.email || 'User' }}</span>
                   <i class="fas fa-chevron-down text-xs"></i>
                 </button>
                 
@@ -85,7 +134,7 @@
                     @click="userDropdownOpen = false"
                   >
                     <i class="fas fa-user mr-3"></i>
-                    Profile Settings
+                    {{ $t('nav.profile') }}
                   </router-link>
                   
                   <router-link
@@ -94,7 +143,7 @@
                     @click="userDropdownOpen = false"
                   >
                     <i class="fas fa-headset mr-3"></i>
-                    Support
+                    {{ $t('nav.support') }}
                   </router-link>
                   
                   <div class="border-t border-gray-200 my-1"></div>
@@ -104,7 +153,7 @@
                     class="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                   >
                     <i class="fas fa-sign-out-alt mr-3"></i>
-                    Logout
+                    {{ $t('nav.logout') }}
                   </button>
                 </div>
               </div>
@@ -132,7 +181,7 @@
         <div class="px-4 py-2 border-b border-gray-200">
           <div class="flex items-center justify-between">
             <span class="text-sm font-medium text-gray-900">
-              Welcome, {{ user?.username || user?.email || 'User' }}
+              {{ $t('common.welcome') }}, {{ isUserLoaded ? (user?.username || user?.email || 'User') : 'Loading...' }}
             </span>
             <button
               @click="toggleUserDropdown"
@@ -149,7 +198,7 @@
               @click="mobileMenuOpen = false; userDropdownOpen = false"
             >
               <i class="fas fa-user mr-2"></i>
-              Profile Settings
+              {{ $t('nav.profile') }}
             </router-link>
             
             <router-link
@@ -158,7 +207,7 @@
               @click="mobileMenuOpen = false; userDropdownOpen = false"
             >
               <i class="fas fa-headset mr-2"></i>
-              Support
+              {{ $t('nav.support') }}
             </router-link>
             
             <button
@@ -166,7 +215,7 @@
               class="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md"
             >
               <i class="fas fa-sign-out-alt mr-2"></i>
-              Logout
+              {{ $t('nav.logout') }}
             </button>
           </div>
         </div>
@@ -176,7 +225,7 @@
           :class="{ 'active': $route.path === '/dashboard' }"
         >
           <i class="fas fa-tachometer-alt mr-2"></i>
-          Dashboard
+          {{ $t('nav.dashboard') }}
         </router-link>
         
         <router-link
@@ -185,7 +234,7 @@
           :class="{ 'active': $route.path === '/wallet' }"
         >
           <i class="fas fa-wallet mr-2"></i>
-          Wallet
+          {{ $t('nav.wallet') }}
         </router-link>
         
         <router-link
@@ -194,7 +243,7 @@
           :class="{ 'active': $route.path === '/transactions' }"
         >
           <i class="fas fa-exchange-alt mr-2"></i>
-          Transactions
+          {{ $t('nav.transactions') }}
         </router-link>
         
         <router-link
@@ -203,7 +252,7 @@
           :class="{ 'active': $route.path === '/transfer' }"
         >
           <i class="fas fa-paper-plane mr-2"></i>
-          Transfer
+          {{ $t('nav.transfer') }}
         </router-link>
         
 
@@ -215,7 +264,7 @@
           :class="{ 'active': $route.path === '/admin' }"
         >
           <i class="fas fa-shield-alt mr-2"></i>
-          Admin
+          {{ $t('nav.admin') }}
         </router-link>
         
 
@@ -228,20 +277,65 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { useI18n } from 'vue-i18n'
 
 export default {
   name: 'Navigation',
   setup() {
     const router = useRouter()
     const authStore = useAuthStore()
+    const { locale } = useI18n()
     const mobileMenuOpen = ref(false)
     const userDropdownOpen = ref(false)
+    const languageDropdownOpen = ref(false)
     
     const user = computed(() => authStore.user)
     const isAdmin = computed(() => authStore.isAdmin)
+    const currentLocale = computed(() => locale.value)
+    const isUserLoaded = computed(() => authStore.isUserLoaded)
+    
+    const availableLocales = [
+      {
+        code: 'en',
+        name: 'English',
+        flag: 'https://flagcdn.com/w40/gb.png'
+      },
+      {
+        code: 'tr',
+        name: 'Türkçe',
+        flag: 'https://flagcdn.com/w40/tr.png'
+      },
+      {
+        code: 'es',
+        name: 'Español',
+        flag: 'https://flagcdn.com/w40/es.png'
+      }
+    ]
+    
+    const changeLanguage = (newLocale) => {
+      locale.value = newLocale
+      localStorage.setItem('locale', newLocale)
+      languageDropdownOpen.value = false
+    }
+    
+    const toggleLanguageDropdown = () => {
+      languageDropdownOpen.value = !languageDropdownOpen.value
+      userDropdownOpen.value = false
+    }
     
     const toggleUserDropdown = () => {
       userDropdownOpen.value = !userDropdownOpen.value
+      languageDropdownOpen.value = false
+    }
+    
+    const getFlagIcon = (code) => {
+      const locale = availableLocales.find(l => l.code === code)
+      return locale ? locale.flag : availableLocales[0].flag
+    }
+
+    const getLanguageName = (code) => {
+      const locale = availableLocales.find(l => l.code === code)
+      return locale ? locale.name : availableLocales[0].name
     }
     
     const handleLogout = async () => {
@@ -253,6 +347,7 @@ export default {
     const closeDropdown = (event) => {
       if (!event.target.closest('.relative')) {
         userDropdownOpen.value = false
+        languageDropdownOpen.value = false
       }
     }
     
@@ -270,8 +365,16 @@ export default {
       isAdmin,
       mobileMenuOpen,
       userDropdownOpen,
+      languageDropdownOpen,
+      currentLocale,
+      availableLocales,
+      changeLanguage,
+      toggleLanguageDropdown,
+      getFlagIcon,
+      getLanguageName,
       toggleUserDropdown,
-      handleLogout
+      handleLogout,
+      isUserLoaded
     }
   }
 }

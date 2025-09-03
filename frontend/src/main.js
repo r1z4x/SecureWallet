@@ -2,6 +2,7 @@ import { createApp } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
 import App from './App.vue'
 import './style.css'
+import i18n from './i18n'
 
 // Import views
 import Landing from './views/Landing.vue'
@@ -24,6 +25,7 @@ import SecurityTips from './views/SecurityTips.vue'
 
 // Import stores
 import { createPinia } from 'pinia'
+import { useAuthStore } from './stores/auth'
 
 // Create router
 const router = createRouter({
@@ -39,19 +41,19 @@ const router = createRouter({
       path: '/auth/login',
       name: 'Login',
       component: Login,
-      meta: { requiresAuth: false }
+      meta: { requiresAuth: false, isAuthPage: true }
     },
     {
       path: '/auth/register',
       name: 'Register',
       component: Register,
-      meta: { requiresAuth: false }
+      meta: { requiresAuth: false, isAuthPage: true }
     },
     {
       path: '/auth/password-reset',
       name: 'PasswordReset',
       component: PasswordReset,
-      meta: { requiresAuth: false }
+      meta: { requiresAuth: false, isAuthPage: true }
     },
     {
       path: '/dashboard',
@@ -130,16 +132,54 @@ const router = createRouter({
       name: 'SecurityTips',
       component: SecurityTips,
       meta: { requiresAuth: false }
+    },
+    // Catch-all route for invalid paths
+    {
+      path: '/:pathMatch(.*)*',
+      redirect: '/'
     }
   ]
 })
 
 // Navigation guard
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
   const token = localStorage.getItem('token')
+  
+  // If user is authenticated and trying to access auth pages, redirect to dashboard
+  if (token && to.meta.isAuthPage) {
+    next('/dashboard')
+    return
+  }
   
   if (to.meta.requiresAuth && !token) {
     next('/auth/login')
+  } else if (to.meta.requiresAuth && token) {
+    // Check if token is still valid by making a request
+    try {
+      // If coming from login, assume token is fresh and user data is being loaded
+      if (to.path === '/dashboard' && from.path === '/auth/login') {
+        next()
+      } else {
+        // For other protected routes, ensure user data is loaded
+        const authStore = useAuthStore()
+        if (!authStore.isUserLoaded && token) {
+          // Try to get current user if not loaded
+          try {
+            await authStore.getCurrentUser()
+          } catch (error) {
+            // Token is invalid, clear it and redirect to login
+            localStorage.removeItem('token')
+            next('/auth/login')
+            return
+          }
+        }
+        next()
+      }
+    } catch (error) {
+      // Token is invalid, clear it and redirect to login
+      localStorage.removeItem('token')
+      next('/auth/login')
+    }
   } else if (to.path === '/' && token) {
     next('/dashboard')
   } else {
@@ -153,5 +193,6 @@ const pinia = createPinia()
 
 app.use(pinia)
 app.use(router)
+app.use(i18n)
 
 app.mount('#app')

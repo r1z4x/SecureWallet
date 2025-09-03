@@ -44,6 +44,12 @@ export const userService = {
     return response.data
   },
 
+  // Create new user (admin only)
+  async createUser(userData) {
+    const response = await apiClient.post('/users/', userData)
+    return response.data
+  },
+
   // Change password
   async changePassword(passwordData) {
     const response = await apiClient.post('/auth/change-password', passwordData)

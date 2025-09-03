@@ -92,7 +92,7 @@
 </template>
 
 <script>
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 
@@ -121,6 +121,14 @@ export default {
         if (requires2FA.value) {
           // 2FA verification
           await authStore.login2FA(userId2FA.value, form.value.code2FA)
+          // Clear form data after successful login
+          form.value = { username: '', password: '', code2FA: '' }
+          requires2FA.value = false
+          userId2FA.value = null
+          
+          // Wait for user data to be fully loaded in store
+          await new Promise(resolve => setTimeout(resolve, 200))
+          
           router.push('/dashboard')
         } else {
           // Initial login
@@ -133,6 +141,12 @@ export default {
             form.value.code2FA = ''
             return
           }
+          
+          // Clear form data after successful login
+          form.value = { username: '', password: '', code2FA: '' }
+          
+          // Wait for user data to be fully loaded in store
+          await new Promise(resolve => setTimeout(resolve, 200))
           
           router.push('/dashboard')
         }

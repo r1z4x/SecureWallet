@@ -5,21 +5,21 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <!-- Header -->
       <div class="mb-8">
-        <h1 class="text-3xl font-bold text-gray-900">Send Money</h1>
-        <p class="text-gray-600 mt-2">Transfer funds to another user securely</p>
+        <h1 class="text-3xl font-bold text-gray-900">{{ $t('transfer.title') }}</h1>
+        <p class="text-gray-600 mt-2">{{ $t('transfer.subtitle') }}</p>
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <!-- Transfer Form -->
         <div class="lg:col-span-2">
           <div class="bg-white rounded-lg shadow-md p-6">
-            <h2 class="text-xl font-semibold text-gray-900 mb-6">New Transfer</h2>
+            <h2 class="text-xl font-semibold text-gray-900 mb-6">{{ $t('transfer.newTransfer') }}</h2>
             
             <form @submit.prevent="handleTransfer" class="space-y-6">
               <!-- Recipient -->
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">
-                  Recipient
+                  {{ $t('transfer.recipient') }}
                 </label>
                 <div class="relative">
                   <div class="flex space-x-2">
@@ -27,7 +27,7 @@
                       v-model="transferForm.recipient"
                       type="text"
                       class="form-input flex-1"
-                      placeholder="Enter email address or user ID"
+                      :placeholder="$t('transfer.enterEmailOrUserId')"
                       @input="searchRecipient"
                       required
                     >
@@ -39,7 +39,7 @@
                     >
                       <i v-if="searchLoading" class="fas fa-spinner fa-spin mr-2"></i>
                       <i v-else class="fas fa-search mr-2"></i>
-                      {{ searchLoading ? 'Searching...' : 'Search' }}
+                      {{ searchLoading ? $t('transfer.searching') : $t('transfer.search') }}
                     </button>
                   </div>
                   
@@ -69,14 +69,14 @@
                   </div>
                 </div>
                 <p class="text-xs text-gray-500 mt-1">
-                  Enter the email address or user ID of the recipient
+                  {{ $t('transfer.enterEmailOrUserIdHelp') }}
                 </p>
               </div>
 
               <!-- Amount -->
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">
-                  Amount
+                  {{ $t('common.amount') }}
                 </label>
                 <div class="relative">
                   <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500">
@@ -94,11 +94,11 @@
                   >
                 </div>
                 <div class="flex justify-between text-xs text-gray-500 mt-1">
-                  <span>Available: ${{ walletData.balance?.toFixed(2) || '0.00' }}</span>
-                  <span v-if="transferForm.amount">Fee: ${{ calculateTransferFee(transferForm.amount) }}</span>
+                  <span>{{ $t('transfer.available') }}: ${{ walletData.balance?.toFixed(2) || '0.00' }}</span>
+                  <span v-if="transferForm.amount">{{ $t('transfer.fee') }}: ${{ calculateTransferFee(transferForm.amount) }}</span>
                 </div>
                 <div v-if="transferForm.amount" class="flex justify-between text-sm font-medium text-gray-700 mt-2 pt-2 border-t border-gray-200">
-                  <span>Total Amount:</span>
+                  <span>{{ $t('transfer.totalAmount') }}:</span>
                   <span class="text-primary-600">${{ (parseFloat(transferForm.amount) + parseFloat(calculateTransferFee(transferForm.amount))).toFixed(2) }}</span>
                 </div>
               </div>
@@ -106,17 +106,17 @@
               <!-- Description -->
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">
-                  Description (Optional)
+                  {{ $t('transfer.description') }}
                 </label>
                 <input
                   v-model="transferForm.description"
                   type="text"
                   class="form-input w-full"
-                  placeholder="What's this transfer for?"
+                  :placeholder="$t('transfer.descriptionPlaceholder')"
                   maxlength="100"
                 >
                 <p class="text-xs text-gray-500 mt-1">
-                  {{ transferForm.description?.length || 0 }}/100 characters
+                  {{ transferForm.description?.length || 0 }}/100 {{ $t('transfer.characters') }}
                 </p>
               </div>
 
@@ -129,7 +129,7 @@
                 >
                   <i v-if="transferLoading" class="fas fa-spinner fa-spin mr-2"></i>
                   <i v-else class="fas fa-paper-plane mr-2"></i>
-                  {{ transferLoading ? 'Processing Transfer...' : 'Send Money' }}
+                  {{ transferLoading ? $t('transfer.processingTransfer') : $t('transfer.sendMoney') }}
                 </button>
               </div>
             </form>
@@ -150,35 +150,35 @@
         <div class="space-y-6">
           <!-- Balance Card -->
           <div class="bg-white rounded-lg shadow-md p-6">
-            <h3 class="text-lg font-semibold text-gray-900 mb-4">Your Balance</h3>
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">{{ $t('transfer.yourBalance') }}</h3>
             <div class="text-center">
               <p class="text-3xl font-bold text-primary-600">
                 ${{ walletData.balance?.toFixed(2) || '0.00' }}
               </p>
               <p class="text-sm text-gray-500 mt-1">
-                Available for transfer
+                {{ $t('transfer.availableForTransfer') }}
               </p>
             </div>
           </div>
 
           <!-- Transfer Limits -->
           <div class="bg-white rounded-lg shadow-md p-6">
-            <h3 class="text-lg font-semibold text-gray-900 mb-4">Transfer Limits</h3>
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">{{ $t('transfer.transferLimits') }}</h3>
             <div class="space-y-3">
               <div class="flex justify-between">
-                <span class="text-gray-600">Daily Limit:</span>
+                <span class="text-gray-600">{{ $t('transfer.dailyLimit') }}:</span>
                 <span class="font-medium">$10,000</span>
               </div>
               <div class="flex justify-between">
-                <span class="text-gray-600">Monthly Limit:</span>
+                <span class="text-gray-600">{{ $t('transfer.monthlyLimit') }}:</span>
                 <span class="font-medium">$50,000</span>
               </div>
               <div class="flex justify-between">
-                <span class="text-gray-600">Min Transfer:</span>
+                <span class="text-gray-600">{{ $t('transfer.minTransfer') }}:</span>
                 <span class="font-medium">$1.00</span>
               </div>
               <div class="flex justify-between">
-                <span class="text-gray-600">Transfer Fee:</span>
+                <span class="text-gray-600">{{ $t('transfer.transferFee') }}:</span>
                 <span class="font-medium text-red-600">1% (Min $1, Max $50)</span>
               </div>
             </div>
@@ -186,10 +186,10 @@
 
           <!-- Recent Transfers -->
           <div class="bg-white rounded-lg shadow-md p-6">
-            <h3 class="text-lg font-semibold text-gray-900 mb-4">Recent Transfers</h3>
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">{{ $t('transfer.recentTransfers') }}</h3>
             <div v-if="recentTransfers.length === 0" class="text-center py-4">
               <i class="fas fa-inbox text-2xl text-gray-300"></i>
-              <p class="text-gray-500 text-sm mt-2">No recent transfers</p>
+              <p class="text-gray-500 text-sm mt-2">{{ $t('transfer.noRecentTransfers') }}</p>
             </div>
             <div v-else class="space-y-3">
               <div
@@ -220,7 +220,7 @@
                 to="/transactions"
                 class="text-primary-600 hover:text-primary-800 text-sm font-medium"
               >
-                View All →
+                {{ $t('transfer.viewAll') }} →
               </router-link>
             </div>
           </div>

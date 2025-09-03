@@ -5,8 +5,8 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <!-- Header -->
       <div class="mb-8">
-        <h1 class="text-3xl font-bold text-gray-900">My Wallet</h1>
-        <p class="text-gray-600 mt-2">Manage your digital wallet and transactions</p>
+        <h1 class="text-3xl font-bold text-gray-900">{{ $t('wallet.title') }}</h1>
+        <p class="text-gray-600 mt-2">{{ $t('wallet.subtitle') }}</p>
       </div>
 
       <!-- Wallet Overview -->
@@ -14,7 +14,7 @@
         <!-- Balance Card -->
         <div class="bg-white rounded-lg shadow-md p-6">
           <div class="flex items-center justify-between mb-4">
-            <h3 class="text-lg font-semibold text-gray-900">Current Balance</h3>
+            <h3 class="text-lg font-semibold text-gray-900">{{ $t('wallet.currentBalance') }}</h3>
             <i class="fas fa-wallet text-primary-600 text-2xl"></i>
           </div>
           <div class="text-center">
@@ -27,58 +27,58 @@
           </div>
           <div class="mt-6 space-y-2">
             <div class="flex justify-between text-sm">
-              <span class="text-gray-600">Total Transactions:</span>
+              <span class="text-gray-600">{{ $t('wallet.totalTransactions') }}:</span>
               <span class="font-medium">{{ walletData.transaction_count || 0 }}</span>
             </div>
             <div class="flex justify-between text-sm">
-              <span class="text-gray-600">Wallet Status:</span>
-              <span class="text-green-600 font-medium">Active</span>
+              <span class="text-gray-600">{{ $t('wallet.walletStatus') }}:</span>
+              <span class="text-green-600 font-medium">{{ $t('wallet.active') }}</span>
             </div>
           </div>
         </div>
 
         <!-- Quick Actions -->
         <div class="bg-white rounded-lg shadow-md p-6">
-          <h3 class="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
+          <h3 class="text-lg font-semibold text-gray-900 mb-4">{{ $t('wallet.quickActions') }}</h3>
           <div class="space-y-3">
             <button
               @click="showDepositModal = true"
               class="w-full btn-primary"
             >
               <i class="fas fa-plus mr-2"></i>
-              Deposit Funds
+              {{ $t('wallet.depositFunds') }}
             </button>
             <button
               @click="showWithdrawModal = true"
               class="w-full btn-secondary"
             >
               <i class="fas fa-minus mr-2"></i>
-              Withdraw Funds
+              {{ $t('wallet.withdrawFunds') }}
             </button>
             <router-link
               to="/transfer"
               class="w-full btn-secondary block text-center"
             >
               <i class="fas fa-paper-plane mr-2"></i>
-              Send Money
+              {{ $t('wallet.sendMoney') }}
             </router-link>
           </div>
         </div>
 
         <!-- Wallet Info -->
         <div class="bg-white rounded-lg shadow-md p-6">
-          <h3 class="text-lg font-semibold text-gray-900 mb-4">Wallet Information</h3>
+          <h3 class="text-lg font-semibold text-gray-900 mb-4">{{ $t('wallet.walletInformation') }}</h3>
           <div class="space-y-3">
             <div class="flex justify-between">
-              <span class="text-gray-600">Wallet ID:</span>
+              <span class="text-gray-600">{{ $t('wallet.walletId') }}:</span>
               <span class="font-mono text-sm">{{ walletData.wallet_id || 'N/A' }}</span>
             </div>
             <div class="flex justify-between">
-              <span class="text-gray-600">Created:</span>
+              <span class="text-gray-600">{{ $t('wallet.created') }}:</span>
               <span class="text-sm">{{ formatDate(walletData.created_at) || 'N/A' }}</span>
             </div>
             <div class="flex justify-between">
-              <span class="text-gray-600">Last Updated:</span>
+              <span class="text-gray-600">{{ $t('wallet.lastUpdated') }}:</span>
               <span class="text-sm">{{ formatDate(walletData.updated_at) || 'N/A' }}</span>
             </div>
           </div>
@@ -89,12 +89,12 @@
       <div class="bg-white rounded-lg shadow-md">
         <div class="px-6 py-4 border-b border-gray-200">
           <div class="flex justify-between items-center">
-            <h3 class="text-lg font-semibold text-gray-900">Recent Transactions</h3>
+            <h3 class="text-lg font-semibold text-gray-900">{{ $t('wallet.recentTransactions') }}</h3>
             <router-link
               to="/transactions"
               class="text-primary-600 hover:text-primary-800 text-sm font-medium"
             >
-              View All →
+              {{ $t('wallet.viewAll') }} →
             </router-link>
           </div>
         </div>
@@ -107,7 +107,7 @@
           <div v-else-if="transactions.length === 0" class="text-center py-8">
             <i class="fas fa-inbox text-4xl text-gray-300"></i>
             <p class="text-gray-500 mt-2">No transactions yet</p>
-            <p class="text-gray-400 text-sm">Your transaction history will appear here</p>
+            <p class="text-gray-400 text-sm">{{ $t('wallet.transactionHistoryWillAppear') }}</p>
           </div>
           
           <div v-else class="space-y-4">
@@ -175,7 +175,7 @@
             </div>
             <div class="mb-4">
               <label class="block text-sm font-medium text-gray-700 mb-2">
-                Description (Optional)
+                {{ $t('wallet.descriptionOptional') }}
               </label>
               <input
                 v-model="depositForm.description"
@@ -190,7 +190,7 @@
                 @click="showDepositModal = false"
                 class="btn-secondary"
               >
-                Cancel
+                {{ $t('common.cancel') }}
               </button>
               <button
                 type="submit"
@@ -198,7 +198,7 @@
                 :disabled="depositLoading"
               >
                 <i v-if="depositLoading" class="fas fa-spinner fa-spin mr-2"></i>
-                {{ depositLoading ? 'Processing...' : 'Deposit' }}
+                {{ depositLoading ? $t('wallet.processing') : $t('wallet.deposit') }}
               </button>
             </div>
           </form>
@@ -214,7 +214,7 @@
     >
       <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white" @click.stop>
         <div class="mt-3">
-          <h3 class="text-lg font-semibold text-gray-900 mb-4">Withdraw Funds</h3>
+          <h3 class="text-lg font-semibold text-gray-900 mb-4">{{ $t('wallet.withdrawFunds') }}</h3>
           <form @submit.prevent="handleWithdraw">
             <div class="mb-4">
               <label class="block text-sm font-medium text-gray-700 mb-2">
@@ -236,7 +236,7 @@
             </div>
             <div class="mb-4">
               <label class="block text-sm font-medium text-gray-700 mb-2">
-                Description (Optional)
+                {{ $t('wallet.descriptionOptional') }}
               </label>
               <input
                 v-model="withdrawForm.description"
@@ -251,7 +251,7 @@
                 @click="showWithdrawModal = false"
                 class="btn-secondary"
               >
-                Cancel
+                {{ $t('common.cancel') }}
               </button>
               <button
                 type="submit"
@@ -259,7 +259,7 @@
                 :disabled="withdrawLoading"
               >
                 <i v-if="withdrawLoading" class="fas fa-spinner fa-spin mr-2"></i>
-                {{ withdrawLoading ? 'Processing...' : 'Withdraw' }}
+                {{ withdrawLoading ? $t('wallet.processing') : $t('wallet.withdraw') }}
               </button>
             </div>
           </form>
