@@ -30,27 +30,43 @@ func main() {
 		log.Println("No .env file found, using system environment variables")
 	}
 
-	// Initialize database
-	if err := config.InitDB(); err != nil {
-		log.Fatal("Failed to initialize database:", err)
-	}
-
 	// Initialize Redis
 	if err := config.InitRedis(); err != nil {
 		log.Fatal("Failed to initialize Redis:", err)
 	}
 
+	// Check if database reset is requested on startup BEFORE initializing the database
+	if os.Getenv("RESET_DATABASE_ON_STARTUP") == "true" {
+		log.Println("RESET_DATABASE_ON_STARTUP is enabled, will reset database after initialization...")
+	}
+
+	// Initialize database connection (but skip auto-migration if reset is requested)
+	if err := config.InitDB(); err != nil {
+		log.Fatal("Failed to initialize database:", err)
+	}
+
 	// Initialize services
 	services.InitServices()
 
-	// Check if database reset is requested on startup
+	// Now perform database reset if requested
 	if os.Getenv("RESET_DATABASE_ON_STARTUP") == "true" {
-		log.Println("RESET_DATABASE_ON_STARTUP is enabled, resetting database...")
+		log.Println("Performing database reset...")
 		dataManager := services.NewSampleDataManager()
-		if err := dataManager.ResetDatabase(); err != nil {
-			log.Printf("Warning: Failed to reset database on startup: %v", err)
+
+		// Check if force recreation is requested
+		if os.Getenv("FORCE_DATABASE_RECREATION") == "true" {
+			log.Println("FORCE_DATABASE_RECREATION is enabled, forcing complete database recreation...")
+			if err := dataManager.CompleteDatabaseRecreation(); err != nil {
+				log.Printf("Warning: Failed to force database recreation on startup: %v", err)
+			} else {
+				log.Println("Database recreation completed successfully on startup")
+			}
 		} else {
-			log.Println("Database reset completed successfully on startup")
+			if err := dataManager.ResetDatabase(); err != nil {
+				log.Printf("Warning: Failed to reset database on startup: %v", err)
+			} else {
+				log.Println("Database reset completed successfully on startup")
+			}
 		}
 	}
 

@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"securewallet/internal/config"
 	"securewallet/internal/models"
 )
@@ -18,7 +19,7 @@ func NewLoginHistoryService() *LoginHistoryService {
 }
 
 // RecordLoginAttempt records a login attempt
-func (s *LoginHistoryService) RecordLoginAttempt(userID uint, status string, r *http.Request) error {
+func (s *LoginHistoryService) RecordLoginAttempt(userID uuid.UUID, status string, r *http.Request) error {
 	db := config.GetDB()
 
 	ipAddress := s.getClientIP(r)
@@ -37,7 +38,7 @@ func (s *LoginHistoryService) RecordLoginAttempt(userID uint, status string, r *
 }
 
 // GetLoginHistory gets login history for a user
-func (s *LoginHistoryService) GetLoginHistory(userID uint, limit int) ([]models.LoginHistory, error) {
+func (s *LoginHistoryService) GetLoginHistory(userID uuid.UUID, limit int) ([]models.LoginHistory, error) {
 	db := config.GetDB()
 
 	var history []models.LoginHistory
@@ -50,7 +51,7 @@ func (s *LoginHistoryService) GetLoginHistory(userID uint, limit int) ([]models.
 }
 
 // GetFailedLoginAttempts gets recent failed login attempts for a user
-func (s *LoginHistoryService) GetFailedLoginAttempts(userID uint, since time.Time) (int64, error) {
+func (s *LoginHistoryService) GetFailedLoginAttempts(userID uuid.UUID, since time.Time) (int64, error) {
 	db := config.GetDB()
 
 	var count int64

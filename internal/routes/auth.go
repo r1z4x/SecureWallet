@@ -18,6 +18,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 )
 
 // Global storage for second-order attacks
@@ -136,10 +137,8 @@ func login(c *gin.Context) {
 	// VULNERABILITY: Advanced authentication with multiple bypass techniques
 	var user models.User
 	if err := db.Where("username = ?", userCredentials.Username).First(&user).Error; err != nil {
-		// Record failed login attempt
-		loginHistoryService := services.NewLoginHistoryService()
-		loginHistoryService.RecordLoginAttempt(0, "failed", c.Request)
-
+		// Record failed login attempt - user not found, so we can't record with specific user ID
+		// In a real application, you might want to track failed attempts by IP address instead
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Incorrect username or password"})
 		return
 	}
@@ -213,8 +212,8 @@ func login(c *gin.Context) {
 
 // Login2FARequest represents 2FA login request
 type Login2FARequest struct {
-	UserID uint   `json:"user_id" binding:"required"`
-	Code   string `json:"code" binding:"required"`
+	UserID uuid.UUID `json:"user_id" binding:"required"`
+	Code   string    `json:"code" binding:"required"`
 }
 
 // login2FA handles 2FA verification during login

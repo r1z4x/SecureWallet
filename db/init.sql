@@ -7,112 +7,119 @@ USE securewallet_dev;
 
 -- Users table
 CREATE TABLE IF NOT EXISTS users (
-    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    id CHAR(36) PRIMARY KEY,
     username VARCHAR(50) UNIQUE NOT NULL,
     email VARCHAR(100) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
+    two_factor_secret VARCHAR(255),
+    two_factor_enabled BOOLEAN DEFAULT FALSE,
     is_active BOOLEAN DEFAULT TRUE,
     is_admin BOOLEAN DEFAULT FALSE,
-    two_factor_enabled BOOLEAN DEFAULT FALSE,
-    two_factor_secret VARCHAR(255),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP NULL,
     INDEX idx_username (username),
-    INDEX idx_email (email)
+    INDEX idx_email (email),
+    INDEX idx_deleted_at (deleted_at)
 );
 
 -- Wallets table
 CREATE TABLE IF NOT EXISTS wallets (
-    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    user_id BIGINT UNSIGNED NOT NULL,                                                                           
-    wallet_name VARCHAR(100) DEFAULT 'Main Wallet',
+    id CHAR(36) PRIMARY KEY,
+    user_id CHAR(36) NOT NULL,                                                                           
     balance DECIMAL(15,2) DEFAULT 0.00,
     currency VARCHAR(3) DEFAULT 'USD',
-    is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP NULL,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    INDEX idx_user_id (user_id)
+    INDEX idx_user_id (user_id),
+    INDEX idx_deleted_at (deleted_at)
 );
 
 -- Transactions table
 CREATE TABLE IF NOT EXISTS transactions (
-    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    from_wallet_id BIGINT UNSIGNED,
-    to_wallet_id BIGINT UNSIGNED,
+    id CHAR(36) PRIMARY KEY,
+    wallet_id CHAR(36) NOT NULL,
+    type VARCHAR(20) NOT NULL,
     amount DECIMAL(15,2) NOT NULL,
-    transaction_type ENUM('TRANSFER', 'DEPOSIT', 'WITHDRAWAL') NOT NULL,
-    status ENUM('PENDING', 'COMPLETED', 'FAILED', 'CANCELLED') DEFAULT 'PENDING',
-    description TEXT,
+    currency VARCHAR(3) DEFAULT 'USD',
+    description VARCHAR(255),
+    status VARCHAR(20) DEFAULT 'pending',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (from_wallet_id) REFERENCES wallets(id) ON DELETE SET NULL,
-    FOREIGN KEY (to_wallet_id) REFERENCES wallets(id) ON DELETE SET NULL,
-    INDEX idx_from_wallet (from_wallet_id),
-    INDEX idx_to_wallet (to_wallet_id),
-    INDEX idx_created_at (created_at)
+    deleted_at TIMESTAMP NULL,
+    FOREIGN KEY (wallet_id) REFERENCES wallets(id) ON DELETE CASCADE,
+    INDEX idx_wallet_id (wallet_id),
+    INDEX idx_deleted_at (deleted_at)
 );
 
 -- Sessions table
 CREATE TABLE IF NOT EXISTS sessions (
-    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    user_id BIGINT UNSIGNED NOT NULL,
-    session_token VARCHAR(255) UNIQUE NOT NULL,
+    id CHAR(36) PRIMARY KEY,
+    user_id CHAR(36) NOT NULL,
+    token VARCHAR(255) NOT NULL,
     expires_at TIMESTAMP NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP NULL,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    INDEX idx_session_token (session_token),
-    INDEX idx_user_id (user_id)
+    INDEX idx_user_id (user_id),
+    INDEX idx_token (token),
+    INDEX idx_deleted_at (deleted_at)
 );
 
 -- Audit logs table
 CREATE TABLE IF NOT EXISTS audit_logs (
-    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    user_id BIGINT UNSIGNED,
+    id CHAR(36) PRIMARY KEY,
+    user_id CHAR(36) NOT NULL,
     action VARCHAR(100) NOT NULL,
-    resource_type VARCHAR(50),
-    resource_id BIGINT UNSIGNED,
-    details JSON,
+    resource VARCHAR(100),
+    details TEXT,
     ip_address VARCHAR(45),
-    user_agent TEXT,
+    user_agent VARCHAR(500),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     INDEX idx_user_id (user_id),
     INDEX idx_action (action),
-    INDEX idx_created_at (created_at)
+    INDEX idx_deleted_at (deleted_at)
 );
 
 -- Support tickets table
 CREATE TABLE IF NOT EXISTS support_tickets (
-    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    user_id BIGINT UNSIGNED NOT NULL,
-    subject VARCHAR(255) NOT NULL,
-    message TEXT NOT NULL,
-    status ENUM('open', 'in_progress', 'closed') DEFAULT 'open',
-    priority ENUM('low', 'medium', 'high', 'urgent') DEFAULT 'medium',
+    id CHAR(36) PRIMARY KEY,
+    user_id CHAR(36) NOT NULL,
+    subject VARCHAR(200) NOT NULL,
+    description TEXT,
+    status VARCHAR(20) DEFAULT 'open',
+    priority VARCHAR(20) DEFAULT 'medium',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP NULL,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     INDEX idx_user_id (user_id),
     INDEX idx_status (status),
     INDEX idx_priority (priority),
-    INDEX idx_created_at (created_at)
+    INDEX idx_deleted_at (deleted_at)
 );
 
 -- Login history table
 CREATE TABLE IF NOT EXISTS login_history (
-    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    user_id BIGINT UNSIGNED NOT NULL,
+    id CHAR(36) PRIMARY KEY,
+    user_id CHAR(36) NOT NULL,
     ip_address VARCHAR(45),
-    user_agent TEXT,
+    user_agent VARCHAR(500),
     status VARCHAR(20) NOT NULL,
     location VARCHAR(100),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP NULL,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     INDEX idx_user_id (user_id),
     INDEX idx_status (status),
-    INDEX idx_created_at (created_at)
+    INDEX idx_deleted_at (deleted_at)
 );
 
 -- Sample data will be initialized via API endpoint /api/data/init-sample

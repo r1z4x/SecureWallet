@@ -15,6 +15,7 @@ func SetupDataManagementRoutes(router *gin.RouterGroup) {
 		data.DELETE("/clear-sample", clearSampleData)
 		data.GET("/stats", getDataStats)
 		data.POST("/reset-database", resetDatabase)
+		data.POST("/force-recreate", forceDatabaseRecreation)
 	}
 }
 
@@ -102,6 +103,73 @@ func resetDatabase(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Database reset successfully",
+		"stats":   dataManager.GetSampleDataStats(),
+	})
+}
+
+// @Summary Force database recreation
+// @Description Completely drop and recreate the database (use when schema incompatibility issues occur)
+// @Tags data
+// @Accept json
+// @Produce json
+// @Success 200 {object} gin.H
+// @Failure 500 {object} gin.H
+// @Router /data/force-recreate [post]
+func forceDatabaseRecreation(c *gin.Context) {
+	dataManager := services.NewSampleDataManager()
+
+	if err := dataManager.CompleteDatabaseRecreation(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error":   "Failed to force database recreation",
+			"details": err.Error(),
+		})
+		return
+	}
+
+	// After recreation, initialize the database and create sample data
+	if err := dataManager.InitializeDatabase(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error":   "Failed to initialize database after recreation",
+			"details": err.Error(),
+		})
+		return
+	}
+
+	// Create sample data
+	if err := dataManager.CreateSampleUsers(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error":   "Failed to create sample users after recreation",
+			"details": err.Error(),
+		})
+		return
+	}
+
+	if err := dataManager.CreateSampleWallets(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error":   "Failed to create sample wallets after recreation",
+			"details": err.Error(),
+		})
+		return
+	}
+
+	if err := dataManager.CreateSampleTransactions(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error":   "Failed to create sample transactions after recreation",
+			"details": err.Error(),
+		})
+		return
+	}
+
+	if err := dataManager.CreateSampleLoginHistory(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error":   "Failed to create sample login history after recreation",
+			"details": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Database force recreation completed successfully",
 		"stats":   dataManager.GetSampleDataStats(),
 	})
 }

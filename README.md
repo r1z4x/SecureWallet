@@ -1,100 +1,159 @@
-# OWASP WSTG Vulnerable Application
+# SecureWallet - Digital Banking Platform
 
-A comprehensive vulnerable web application designed for OWASP Web Security Testing Guide (WSTG) and Attack Simulator integration. This application simulates real-world vulnerabilities across multiple OWASP Top 10 categories with advanced attack techniques including second-order attacks, out-of-band (OOB) exfiltration, and complex bypass methods.
+A comprehensive digital banking platform built with Go (backend) and Vue.js (frontend), featuring secure wallet management, transaction processing, and user authentication.
 
-## 🎯 Purpose
+## Features
 
-This application serves as a testing platform for:
-- **OWASPAttackSimulator** integration and testing
-- **Security researchers** and penetration testers
-- **Educational purposes** for learning web application security
-- **Vulnerability assessment** training and certification
+- **User Management**: Secure user registration, authentication, and profile management
+- **Wallet System**: Multi-currency wallet support with balance tracking
+- **Transaction Processing**: Secure money transfers between users
+- **Two-Factor Authentication**: Enhanced security with TOTP support
+- **Admin Panel**: Comprehensive administrative tools and monitoring
+- **Audit Logging**: Complete audit trail for all system activities
+- **API Documentation**: Swagger/OpenAPI documentation
 
-The application contains intentionally vulnerable code with vulnerabilities integrated into the existing application functionality, making it suitable for comprehensive security testing scenarios.
-
-## 🏗️ Architecture
-
-### Backend (Go Gin)
-- **Framework**: Go Gin with GORM ORM
-- **Database**: MySQL with Redis caching
-- **Authentication**: JWT-based with multiple vulnerability patterns
-- **Vulnerability Integration**: Payload-based aggregation system with webhook logging
-
-### Frontend (Vue.js)
-- **Framework**: Vue 3 with Composition API
-- **Styling**: Tailwind CSS
-- **State Management**: Pinia
-- **Build Tool**: Vite
-
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
-- Docker and Docker Compose
+
 - Go 1.21+
-- Node.js 16+
+- Node.js 18+
+- MySQL 8.0+
+- Redis 6.0+
 
-### 1. Clone and Setup
-```bash
-git clone <repository-url>
-cd OWASP-WSTG-Vulnerable-App
+### Environment Setup
+
+1. Copy `env.example` to `.env` and configure your environment variables
+2. Set up your MySQL database and Redis instance
+3. Configure the database connection details in your `.env` file
+
+### Database Schema Issues
+
+If you encounter foreign key constraint errors like:
+```
+Error 3780 (HY000): Referencing column 'user_id' and referenced column 'id' in foreign key constraint 'fk_users_wallets' are incompatible.
 ```
 
-### 2. Environment Configuration
+This indicates a schema mismatch between your existing database and the new UUID-based schema. To resolve this:
+
+#### Quick Fix Script (Recommended)
 ```bash
-cp env.example .env
-# Edit .env file with your configuration
+# Run the interactive database fix script
+./fix-database.sh
 ```
 
-### 3. Start the Application
-```bash
-# Start all services
-docker-compose up -d
+This script will guide you through the available options and set the necessary environment variables.
 
-# Or start development environment
+#### Manual Options
+
+**Option 1: Force Database Recreation (Recommended for Development)**
+```bash
+# Set environment variable
+export FORCE_DATABASE_RECREATION=true
+export RESET_DATABASE_ON_STARTUP=true
+
+# Restart the application
 ./start-go-dev.sh
 ```
 
-### 4. Access the Application
-- **Frontend**: http://localhost:3000
-- **Backend API**: http://localhost:8080
-- **API Documentation**: http://localhost:8080/docs
+**Option 2: Use the Force Recreation API Endpoint**
+```bash
+# Call the force recreation endpoint
+curl -X POST http://localhost:8080/api/data/force-recreate
+```
 
-## 🔧 Vulnerability Integration Approach
+**Option 3: Manual Database Reset**
+```bash
+# Set environment variable
+export RESET_DATABASE_ON_STARTUP=true
 
-The application uses a **payload-based aggregation system** that:
+# Restart the application
+./start-go-dev.sh
+```
 
-1. **Logs payloads** sent by the Attack Simulator
-2. **Logs webhook requests** made by the Attack Simulator
-3. **Aggregates vulnerability levels** per test case
-4. **Calculates final difficulty** based on maximum level triggered
-5. **Reports results** via webhook to the Attack Simulator with request logs
+### Running the Application
 
-### Vulnerability Levels
+1. **Backend (Go)**
+   ```bash
+   # Development mode
+   ./start-go-dev.sh
+   
+   # Production mode
+   ./start-go.sh
+   ```
 
-The system supports four progressive difficulty levels:
+2. **Frontend (Vue.js)**
+   ```bash
+   cd frontend
+   npm install
+   npm run dev
+   ```
 
-- **basic**: Simple, direct vulnerabilities
-- **medium**: Vulnerabilities with weak protection mechanisms and blind attacks
-- **hard**: Complex vulnerabilities requiring advanced bypass techniques and time-based attacks
-- **expert**: Sophisticated vulnerabilities with multiple attack vectors including OOB and second-order attacks
+3. **Docker (Alternative)**
+   ```bash
+   # Development
+   docker-compose -f docker-compose.dev.yml up
+   
+   # Production
+   docker-compose up
+   ```
 
-## 🎯 Integrated Vulnerability Types
+## API Documentation
 
-### Authentication Routes (`/api/auth/*`)
-- **Weak Password Storage**: Multiple formats (plain text, MD5, SHA1, Base64)
-- **Weak Authentication Logic**: Multiple bypass techniques
-- **Weak JWT Implementation**: Algorithm confusion, weak secrets, long expiration
-- **Password Reset Vulnerabilities**: OOB attacks, second-order storage
+Once the application is running, you can access the Swagger documentation at:
+- **Swagger UI**: `http://localhost:8080/swagger/index.html`
+- **API Base URL**: `http://localhost:8080/api`
 
-### User Management Routes (`/api/users/*`)
-- **SQL Injection**: Advanced techniques (OOB, second-order, union-based)
-- **IDOR (Insecure Direct Object References)**: Complex bypass patterns
-- **XSS (Cross-Site Scripting)**: Advanced sanitization bypass techniques
+## Security Features
 
-### Transaction Routes (`/api/transactions/*`)
-- **SQL Injection**: Blind, time-based, union-based attacks
-- **Command Injection**: DNS, HTTP, and advanced command chaining
-- **IDOR**: Transaction access control bypass
+- JWT-based authentication
+- Two-factor authentication (TOTP)
+- Rate limiting and input validation
+- Secure password hashing with bcrypt
+- Comprehensive audit logging
+- CORS protection
 
-### Support System Routes (`/api/support/*`)
-- **XSS**: Reflected, stored, and DOM-based attacks
+## Development
+
+### Project Structure
+
+```
+SecureWallet/
+├── internal/           # Go backend code
+│   ├── config/        # Configuration management
+│   ├── middleware/    # HTTP middleware
+│   ├── models/        # Data models
+│   ├── routes/        # API routes
+│   └── services/      # Business logic
+├── frontend/          # Vue.js frontend
+├── db/               # Database initialization scripts
+├── docs/             # API documentation
+└── docker/           # Docker configuration
+```
+
+### Database Models
+
+The application uses UUIDs for all primary keys and foreign keys, ensuring:
+- Global uniqueness
+- No auto-increment conflicts
+- Better security (no predictable IDs)
+- Distributed system compatibility
+
+### Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests if applicable
+5. Submit a pull request
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Support
+
+For support and questions:
+- Check the API documentation at `/swagger/index.html`
+- Review the logs for detailed error information
+- Use the database reset endpoints if you encounter schema issues

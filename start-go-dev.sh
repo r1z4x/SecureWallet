@@ -41,4 +41,4 @@ echo "   - MongoDB: localhost:27018"
 echo "   - Redis: localhost:6380"
 
 # Start with Docker Compose
-docker-compose -f docker-compose.dev.yml up --build
+docker-compose -f docker-compose.dev.yml up -d --build

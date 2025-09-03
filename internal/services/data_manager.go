@@ -3,11 +3,13 @@ package services
 import (
 	"fmt"
 	"log"
+	"os"
 	"securewallet/internal/config"
 	"securewallet/internal/models"
 	"strings"
 
 	"golang.org/x/crypto/bcrypt"
+	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
 
@@ -23,11 +25,26 @@ func NewSampleDataManager() *SampleDataManager {
 	}
 }
 
-// InitializeDatabase initializes database tables
+// InitializeDatabase initializes the database tables
 func (dm *SampleDataManager) InitializeDatabase() error {
 	log.Println("Initializing database tables...")
 
-	// Auto-migrate all models to create tables
+	// Drop all existing tables first to ensure clean slate
+	log.Println("Dropping all existing tables...")
+	if err := dm.db.Migrator().DropTable(
+		&models.Transaction{},
+		&models.LoginHistory{},
+		&models.SupportTicket{},
+		&models.AuditLog{},
+		&models.Session{},
+		&models.Wallet{},
+		&models.User{},
+	); err != nil {
+		log.Printf("Error dropping tables: %v", err)
+		return err
+	}
+
+	// Auto migrate to create new tables with correct schema
 	if err := dm.db.AutoMigrate(
 		&models.User{},
 		&models.Wallet{},
@@ -107,33 +124,45 @@ func (dm *SampleDataManager) ClearSampleData() error {
 func (dm *SampleDataManager) ResetDatabase() error {
 	log.Println("Starting complete database reset...")
 
-	// Step 1: Clear all existing sample data
-	log.Println("Step 1: Clearing existing sample data...")
+	// Step 1: Check if we need to completely recreate the database
+	log.Println("Step 1: Checking database schema compatibility...")
+	if needsCompleteReset, err := dm.checkSchemaCompatibility(); err != nil {
+		log.Printf("Warning: Could not check schema compatibility: %v", err)
+	} else if needsCompleteReset {
+		log.Println("Schema incompatibility detected, performing complete database recreation...")
+		if err := dm.CompleteDatabaseRecreation(); err != nil {
+			return fmt.Errorf("failed to recreate database: %v", err)
+		}
+		return nil
+	}
+
+	// Step 2: Clear all existing sample data
+	log.Println("Step 2: Clearing existing sample data...")
 	if err := dm.ClearSampleData(); err != nil {
 		return fmt.Errorf("failed to clear sample data: %v", err)
 	}
 
-	// Step 2: Initialize database tables
-	log.Println("Step 2: Initializing database tables...")
+	// Step 3: Initialize database tables
+	log.Println("Step 3: Initializing database tables...")
 	if err := dm.InitializeDatabase(); err != nil {
 		return fmt.Errorf("failed to initialize database: %v", err)
 	}
 
-	// Step 3: Create sample data
-	log.Println("Step 3: Creating sample data...")
-	if err := dm.createSampleUsers(); err != nil {
+	// Step 4: Create sample data
+	log.Println("Step 4: Creating sample data...")
+	if err := dm.CreateSampleUsers(); err != nil {
 		return fmt.Errorf("failed to create sample users: %v", err)
 	}
 
-	if err := dm.createSampleWallets(); err != nil {
+	if err := dm.CreateSampleWallets(); err != nil {
 		return fmt.Errorf("failed to create sample wallets: %v", err)
 	}
 
-	if err := dm.createSampleTransactions(); err != nil {
+	if err := dm.CreateSampleTransactions(); err != nil {
 		return fmt.Errorf("failed to create sample transactions: %v", err)
 	}
 
-	if err := dm.createSampleLoginHistory(); err != nil {
+	if err := dm.CreateSampleLoginHistory(); err != nil {
 		return fmt.Errorf("failed to create sample login history: %v", err)
 	}
 
@@ -141,8 +170,105 @@ func (dm *SampleDataManager) ResetDatabase() error {
 	return nil
 }
 
-// createSampleUsers creates sample users
-func (dm *SampleDataManager) createSampleUsers() error {
+// checkSchemaCompatibility checks if the existing database schema is compatible with the new UUID-based schema
+func (dm *SampleDataManager) checkSchemaCompatibility() (bool, error) {
+	// Check if users table exists and has the correct ID column type
+	var result struct {
+		ColumnType string `gorm:"column:COLUMN_TYPE"`
+	}
+
+	err := dm.db.Raw("SELECT COLUMN_TYPE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'id'").Scan(&result).Error
+	if err != nil {
+		// Table doesn't exist, which is fine
+		return false, nil
+	}
+
+	// If the ID column is not CHAR(36), we need a complete reset
+	if result.ColumnType != "char(36)" {
+		log.Printf("Schema incompatibility detected: users.id is %s, expected char(36)", result.ColumnType)
+		return true, nil
+	}
+
+	return false, nil
+}
+
+// CompleteDatabaseRecreation completely drops and recreates the database
+func (dm *SampleDataManager) CompleteDatabaseRecreation() error {
+	log.Println("Performing complete database recreation...")
+
+	// Get database name
+	dbName := dm.db.Migrator().CurrentDatabase()
+
+	// Close current connection
+	sqlDB, err := dm.db.DB()
+	if err != nil {
+		return fmt.Errorf("failed to get underlying sql.DB: %v", err)
+	}
+	sqlDB.Close()
+
+	// Connect to MySQL without specifying a database
+	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/?charset=utf8mb4&parseTime=True&loc=Local",
+		os.Getenv("DB_USER"),
+		os.Getenv("DB_PASSWORD"),
+		os.Getenv("DB_HOST"),
+		os.Getenv("DB_PORT"),
+	)
+
+	tempDB, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
+	if err != nil {
+		return fmt.Errorf("failed to connect to MySQL: %v", err)
+	}
+
+	// Drop and recreate the database
+	log.Printf("Dropping database: %s", dbName)
+	if err := tempDB.Exec(fmt.Sprintf("DROP DATABASE IF EXISTS `%s`", dbName)).Error; err != nil {
+		return fmt.Errorf("failed to drop database: %v", err)
+	}
+
+	log.Printf("Creating database: %s", dbName)
+	if err := tempDB.Exec(fmt.Sprintf("CREATE DATABASE `%s` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci", dbName)).Error; err != nil {
+		return fmt.Errorf("failed to create database: %v", err)
+	}
+
+	// Close temporary connection
+	tempSqlDB, _ := tempDB.DB()
+	tempSqlDB.Close()
+
+	// Reconnect to the recreated database
+	if err := dm.reconnectToDatabase(); err != nil {
+		return fmt.Errorf("failed to reconnect to database: %v", err)
+	}
+
+	// Update the global database connection as well
+	if err := dm.updateGlobalDatabaseConnection(); err != nil {
+		return fmt.Errorf("failed to update global database connection: %v", err)
+	}
+
+	log.Println("Database recreation completed successfully")
+	return nil
+}
+
+// reconnectToDatabase reconnects to the database after recreation
+func (dm *SampleDataManager) reconnectToDatabase() error {
+	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local",
+		os.Getenv("DB_USER"),
+		os.Getenv("DB_PASSWORD"),
+		os.Getenv("DB_HOST"),
+		os.Getenv("DB_PORT"),
+		os.Getenv("DB_NAME"),
+	)
+
+	var err error
+	dm.db, err = gorm.Open(mysql.Open(dsn), &gorm.Config{})
+	if err != nil {
+		return fmt.Errorf("failed to reconnect to database: %v", err)
+	}
+
+	return nil
+}
+
+// CreateSampleUsers creates sample users
+func (dm *SampleDataManager) CreateSampleUsers() error {
 	// Create users with properly hashed passwords using bcrypt
 	hashPassword := func(password string) (string, error) {
 		hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
@@ -182,7 +308,11 @@ func (dm *SampleDataManager) createSampleUsers() error {
 	}
 
 	// Now set a secure bcrypt password
-	pw, err := hashPassword("Admin#2025")
+	adminPassword := os.Getenv("ADMIN_PASSWORD")
+	if adminPassword == "" {
+		adminPassword = "Admin#2025" // Default fallback
+	}
+	pw, err := hashPassword(adminPassword)
 	if err != nil {
 		return fmt.Errorf("failed to hash admin password: %v", err)
 	}
@@ -207,7 +337,11 @@ func (dm *SampleDataManager) createSampleUsers() error {
 	}
 
 	// Now set a secure bcrypt password
-	pw2, err := hashPassword("User#2025")
+	userPassword := os.Getenv("USER_PASSWORD")
+	if userPassword == "" {
+		userPassword = "User#2025" // Default fallback
+	}
+	pw2, err := hashPassword(userPassword)
 	if err != nil {
 		return fmt.Errorf("failed to hash user password: %v", err)
 	}
@@ -248,7 +382,11 @@ func (dm *SampleDataManager) createSampleUsers() error {
 		}
 
 		// Set a secure bcrypt password
-		if pw3, err := hashPassword("User#2025"); err == nil {
+		randomUserPassword := os.Getenv("RANDOM_USER_PASSWORD")
+		if randomUserPassword == "" {
+			randomUserPassword = "ChangeMe_User#2025" // Default fallback
+		}
+		if pw3, err := hashPassword(randomUserPassword); err == nil {
 			user.PasswordHash = pw3
 		} else {
 			log.Printf("Error hashing password for user %s: %v", username, err)
@@ -263,8 +401,8 @@ func (dm *SampleDataManager) createSampleUsers() error {
 	return nil
 }
 
-// createSampleWallets creates sample wallets
-func (dm *SampleDataManager) createSampleWallets() error {
+// CreateSampleWallets creates sample wallets
+func (dm *SampleDataManager) CreateSampleWallets() error {
 	// Get all user IDs
 	var users []models.User
 	if err := dm.db.Find(&users).Error; err != nil {
@@ -280,7 +418,9 @@ func (dm *SampleDataManager) createSampleWallets() error {
 		user := users[userIndex]
 
 		// Random balance between 100 and 50000
-		balance := float64(100 + (i * 50) + (int(user.ID) * 10))
+		// Use a hash of the user ID to generate consistent but varied balances
+		userIDHash := fmt.Sprintf("%x", user.ID)
+		balance := float64(100 + (i * 50) + (len(userIDHash) * 10))
 		if balance > 50000 {
 			balance = 50000 - float64(i*10)
 		}
@@ -295,7 +435,7 @@ func (dm *SampleDataManager) createSampleWallets() error {
 		}
 
 		if err := dm.db.Create(&wallet).Error; err != nil {
-			log.Printf("Error creating wallet for user %d: %v", user.ID, err)
+			log.Printf("Error creating wallet for user %s: %v", user.ID, err)
 			continue // Continue with next wallet instead of failing completely
 		}
 	}
@@ -304,8 +444,8 @@ func (dm *SampleDataManager) createSampleWallets() error {
 	return nil
 }
 
-// createSampleTransactions creates sample transactions
-func (dm *SampleDataManager) createSampleTransactions() error {
+// CreateSampleTransactions creates sample transactions
+func (dm *SampleDataManager) CreateSampleTransactions() error {
 	// Get all wallet IDs
 	var wallets []models.Wallet
 	if err := dm.db.Find(&wallets).Error; err != nil {
@@ -336,7 +476,9 @@ func (dm *SampleDataManager) createSampleTransactions() error {
 		wallet := wallets[walletIndex]
 
 		// Random amount between 1 and 5000
-		amount := float64(1 + (i * 10) + (int(wallet.ID) * 5))
+		// Use a hash of the wallet ID to generate consistent but varied amounts
+		walletIDHash := fmt.Sprintf("%x", wallet.ID)
+		amount := float64(1 + (i * 10) + (len(walletIDHash) * 5))
 		if amount > 5000 {
 			amount = 5000 - float64(i*5)
 		}
@@ -360,8 +502,8 @@ func (dm *SampleDataManager) createSampleTransactions() error {
 	return nil
 }
 
-// createSampleLoginHistory creates sample login history
-func (dm *SampleDataManager) createSampleLoginHistory() error {
+// CreateSampleLoginHistory creates sample login history
+func (dm *SampleDataManager) CreateSampleLoginHistory() error {
 	// Get all user IDs
 	var users []models.User
 	if err := dm.db.Find(&users).Error; err != nil {
@@ -428,4 +570,31 @@ func (dm *SampleDataManager) GetSampleDataStats() map[string]interface{} {
 		"transactions":  transactionCount,
 		"login_history": loginHistoryCount,
 	}
+}
+
+// updateGlobalDatabaseConnection updates the global database connection after recreation
+func (dm *SampleDataManager) updateGlobalDatabaseConnection() error {
+	// Create a new database connection
+	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local",
+		os.Getenv("DB_USER"),
+		os.Getenv("DB_PASSWORD"),
+		os.Getenv("DB_HOST"),
+		os.Getenv("DB_PORT"),
+		os.Getenv("DB_NAME"),
+	)
+
+	var err error
+	newDB, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
+	if err != nil {
+		return fmt.Errorf("failed to create new global database connection: %v", err)
+	}
+
+	// Update the global database connection using the config package function
+	config.UpdateDB(newDB)
+
+	// Also update our local connection to ensure consistency
+	dm.db = newDB
+
+	log.Println("Global database connection updated successfully")
+	return nil
 }
