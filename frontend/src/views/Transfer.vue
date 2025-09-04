@@ -199,7 +199,8 @@
               >
                 <div>
                   <p class="text-sm font-medium text-gray-900">
-                    {{ transfer.description || 'Transfer' }}
+                    <!-- VULNERABLE: Stored XSS - description rendered without sanitization -->
+                    <span v-html="transfer.description || 'Transfer'"></span>
                   </p>
                   <p class="text-xs text-gray-500">
                     {{ formatDate(transfer.created_at) }}

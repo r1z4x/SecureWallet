@@ -220,7 +220,8 @@
                 </div>
                 <div class="ml-4">
                   <p class="text-sm font-medium text-gray-900">
-                    {{ transaction.description || 'Transaction' }}
+                    <!-- VULNERABLE: Stored XSS - description rendered without sanitization -->
+                    <span v-html="transaction.description || 'Transaction'"></span>
                   </p>
                   <p class="text-xs text-gray-500">
                     {{ formatDate(transaction.created_at) }}
