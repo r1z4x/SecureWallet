@@ -51,6 +51,9 @@ Thumbs.db
 # Logs
 logs/
 *.log
+security_alerts.log
+security_*.log
+*.security.log
 
 # Database
 *.db
@@ -177,6 +180,15 @@ data/backups/
 # Test files
 *_test.go
 tests/
+
+# Vulnerability test scripts
+scripts/*
+
+
+# Backup files (can leak sensitive information)
+backups/
+*.backup
+backup_*.json
 
 # Documentation build
 docs/_build/

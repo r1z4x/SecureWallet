@@ -146,6 +146,8 @@ func main() {
 		routes.SetupDataManagementRoutes(api)
 		routes.SetupTwoFactorRoutes(api)
 		routes.SetupLoginHistoryRoutes(api)
+		routes.SetupBackupRoutes(api)
+		routes.SetupSecurityRoutes(api)
 	}
 
 	// Root endpoint

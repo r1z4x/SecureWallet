@@ -2,12 +2,14 @@ package routes
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"strings"
 
 	"securewallet/internal/config"
 	"securewallet/internal/middleware"
 	"securewallet/internal/models"
+	"securewallet/internal/services"
 
 	"github.com/gin-gonic/gin"
 )
@@ -339,9 +341,72 @@ func getWallets(c *gin.Context) {
 }
 
 // getWallet gets a specific wallet
+// VULNERABLE: IDOR - No ownership check, allows access to any wallet by ID
 func getWallet(c *gin.Context) {
 	id := c.Param("id")
-	c.JSON(http.StatusOK, gin.H{"message": "Get wallet", "id": id})
+
+	user, exists := c.Get("user")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	currentUser := user.(*models.User)
+	db := config.GetDB()
+
+	// VULNERABLE: No ownership validation - any authenticated user can access any wallet
+	var wallet models.Wallet
+	if err := db.Preload("User").Where("id = ?", id).First(&wallet).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Wallet not found"})
+		return
+	}
+
+	// VULNERABLE: Return wallet details without checking if currentUser owns it
+	// This allows any authenticated user to read any wallet's balance and details
+
+	// Log the access for audit purposes (but this doesn't prevent the vulnerability)
+	auditLog := models.AuditLog{
+		UserID:    currentUser.ID,
+		Action:    "WALLET_READ",
+		Resource:  "wallet",
+		Details:   fmt.Sprintf("Accessed wallet %s (owner: %s)", id, wallet.UserID),
+		IPAddress: c.ClientIP(),
+		UserAgent: c.Request.UserAgent(),
+	}
+	db.Create(&auditLog)
+
+	// 🚨 SECURITY DETECTION: Detect IDOR attempts
+	if wallet.UserID != currentUser.ID {
+		securityDetector := services.NewSecurityDetector()
+		alert, err := securityDetector.DetectIDOR(
+			currentUser.ID.String(),
+			fmt.Sprintf("wallet:%s", id),
+			wallet.UserID.String(),
+			c.ClientIP(),
+			c.Request.UserAgent(),
+		)
+
+		if err != nil {
+			log.Printf("Failed to detect IDOR: %v", err)
+		} else if alert != nil {
+			log.Printf("🚨 IDOR ALERT CREATED: %s", alert.ID)
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"wallet": gin.H{
+			"id":       wallet.ID,
+			"balance":  wallet.Balance,
+			"currency": wallet.Currency,
+			"owner": gin.H{
+				"id":       wallet.User.ID,
+				"username": wallet.User.Username,
+				"email":    wallet.User.Email,
+			},
+			"created_at": wallet.CreatedAt,
+			"updated_at": wallet.UpdatedAt,
+		},
+	})
 }
 
 // createWallet creates a new wallet

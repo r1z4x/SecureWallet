@@ -122,5 +122,27 @@ CREATE TABLE IF NOT EXISTS login_history (
     INDEX idx_deleted_at (deleted_at)
 );
 
+-- Security alerts table
+CREATE TABLE IF NOT EXISTS security_alerts (
+    id VARCHAR(100) PRIMARY KEY,
+    type VARCHAR(50) NOT NULL,
+    severity VARCHAR(20) NOT NULL,
+    user_id CHAR(36) NOT NULL,
+    ip_address VARCHAR(45),
+    details JSON,
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    status VARCHAR(20) DEFAULT 'OPEN',
+    resolved_by VARCHAR(100),
+    resolved_at TIMESTAMP NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_type (type),
+    INDEX idx_severity (severity),
+    INDEX idx_status (status),
+    INDEX idx_timestamp (timestamp),
+    INDEX idx_user_id (user_id)
+);
+
+
+
 -- Sample data will be initialized via API endpoint /api/data/init-sample
 -- This ensures data is only created once and can be managed programmatically
