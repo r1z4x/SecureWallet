@@ -1,8 +1,39 @@
 <template>
   <div class="min-h-screen bg-gradient-to-br from-primary-50 to-blue-100">
 
+    <!-- Header -->
+    <header class="bg-white shadow-sm">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center py-6">
+          <div class="flex items-center">
+            <img src="@/assets/logo.svg" alt="Logo" class="h-10 max-w-64 w-auto mr-3">
+            <h1 class="text-2xl font-bold text-gray-900">
+              <sup class="text-red-500 text-xs">{{ $t('common.vulnerable') }}</sup>
+            </h1>
+          </div>
+          <div class="flex items-center space-x-4">
+            <LanguageSelector />
+            <router-link to="/" class="btn-secondary">
+              <i class="fas fa-home mr-2"></i>{{ $t('nav.home') }}
+            </router-link>
+          </div>
+        </div>
+      </div>
+    </header>
+
     <!-- Blog Post Content -->
     <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+      <!-- Back to Blog Link -->
+      <div class="mb-8">
+        <router-link 
+          to="/blog" 
+          class="inline-flex items-center text-primary-600 hover:text-primary-800 transition-colors font-medium"
+        >
+          <i class="fas fa-arrow-left mr-2"></i>
+          <span>{{ $t('blog.backToBlog') }}</span>
+        </router-link>
+      </div>
+
       <!-- Loading State -->
       <div v-if="loading" class="text-center py-16">
         <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
