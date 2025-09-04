@@ -11,7 +11,11 @@ import (
 type User struct {
 	ID               uuid.UUID      `json:"id" gorm:"type:char(36);primaryKey"`
 	Username         string         `json:"username" gorm:"uniqueIndex;size:50;not null"`
+	Name             string         `json:"name" gorm:"size:100;not null"`
 	Email            string         `json:"email" gorm:"uniqueIndex;size:100;not null"`
+	Title            string         `json:"title" gorm:"size:100"`
+	Avatar           string         `json:"avatar" gorm:"size:500"`
+	Bio              string         `json:"bio" gorm:"type:text"`
 	PasswordHash     string         `json:"-" gorm:"size:255;not null"`
 	TwoFactorSecret  string         `json:"-" gorm:"size:255"`
 	TwoFactorEnabled bool           `json:"two_factor_enabled" gorm:"default:false"`
@@ -26,6 +30,7 @@ type User struct {
 	Sessions       []Session       `json:"sessions,omitempty" gorm:"foreignKey:UserID"`
 	AuditLogs      []AuditLog      `json:"audit_logs,omitempty" gorm:"foreignKey:UserID"`
 	SupportTickets []SupportTicket `json:"support_tickets,omitempty" gorm:"foreignKey:UserID"`
+	BlogPosts      []BlogPost      `json:"blog_posts,omitempty" gorm:"foreignKey:AuthorID"`
 }
 
 // TableName specifies the table name for User

@@ -122,6 +122,69 @@ CREATE TABLE IF NOT EXISTS login_history (
     INDEX idx_deleted_at (deleted_at)
 );
 
+-- Blog categories table
+CREATE TABLE IF NOT EXISTS blog_categories (
+    id CHAR(36) PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    slug VARCHAR(100) UNIQUE NOT NULL,
+    description TEXT,
+    color VARCHAR(7) DEFAULT '#3B82F6',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_slug (slug)
+);
+
+-- Blog tags table
+CREATE TABLE IF NOT EXISTS blog_tags (
+    id CHAR(36) PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    slug VARCHAR(100) UNIQUE NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_slug (slug)
+);
+
+-- Blog posts table
+CREATE TABLE IF NOT EXISTS blog_posts (
+    id CHAR(36) PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    slug VARCHAR(255) UNIQUE NOT NULL,
+    excerpt TEXT,
+    content LONGTEXT,
+    image VARCHAR(500),
+    category VARCHAR(100) NOT NULL,
+    tags TEXT, -- JSON string of tags
+    read_time INT DEFAULT 5,
+    author_id CHAR(36) NOT NULL,
+    status VARCHAR(20) DEFAULT 'published',
+    view_count INT DEFAULT 0,
+    published_at TIMESTAMP NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (author_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_slug (slug),
+    INDEX idx_category (category),
+    INDEX idx_status (status),
+    INDEX idx_author_id (author_id)
+);
+
+-- Blog comments table
+CREATE TABLE IF NOT EXISTS blog_comments (
+    id CHAR(36) PRIMARY KEY,
+    post_id CHAR(36) NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    email VARCHAR(100) NOT NULL,
+    content TEXT NOT NULL,
+    status VARCHAR(20) DEFAULT 'pending',
+    ip_address VARCHAR(45),
+    user_agent VARCHAR(500),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (post_id) REFERENCES blog_posts(id) ON DELETE CASCADE,
+    INDEX idx_post_id (post_id),
+    INDEX idx_status (status)
+);
+
 -- Security alerts table
 CREATE TABLE IF NOT EXISTS security_alerts (
     id VARCHAR(100) PRIMARY KEY,

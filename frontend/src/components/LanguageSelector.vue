@@ -2,7 +2,7 @@
   <div class="relative">
     <button
       @click="isOpen = !isOpen"
-      class="flex items-center space-x-2 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+      class="flex items-center space-x-2 text-sm font-medium text-gray-700 hover:text-gray-900 focus:outline-none"
     >
       <span class="w-5 h-5 rounded-full overflow-hidden">
         <img
@@ -11,7 +11,6 @@
           class="w-full h-full object-cover"
         />
       </span>
-      <span>{{ getLanguageName(currentLocale) }}</span>
       <svg
         class="w-4 h-4"
         fill="none"

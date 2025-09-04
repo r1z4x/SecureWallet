@@ -81,7 +81,47 @@ export default {
     invalidCredentials: 'Invalid email or password',
     accountCreated: 'Account created successfully',
     passwordResetSent: 'Password reset email sent',
-    passwordResetSuccess: 'Password reset successfully'
+    passwordResetSuccess: 'Password reset successfully',
+    // Login form
+    usernameOrEmail: 'Username or Email',
+    usernameOrEmailPlaceholder: 'Enter your username or email',
+    passwordPlaceholder: 'Enter your password',
+    signInButton: 'Sign In',
+    signingIn: 'Signing In...',
+    // Register form
+    username: 'Username',
+    usernamePlaceholder: 'Choose a username',
+    emailPlaceholder: 'Enter your email',
+    passwordPlaceholder: 'Create a password',
+    confirmPasswordPlaceholder: 'Confirm your password',
+    createAccountButton: 'Create Account',
+    creatingAccount: 'Creating Account...',
+    passwordsDoNotMatch: 'Passwords do not match.',
+    registrationFailed: 'Registration failed. Please try again.',
+    // Password Reset form
+    resetPasswordTitle: 'Reset Password',
+    resetPasswordSubtitle: 'Enter your email to receive reset instructions',
+    sendResetLink: 'Send Reset Link',
+    sending: 'Sending...',
+    passwordResetEmailSent: 'Password reset email sent! Please check your inbox.',
+    failedToSendResetEmail: 'Failed to send reset email. Please try again.',
+    rememberPassword: 'Remember your password?',
+    // 2FA
+    twoFactorTitle: 'Two-Factor Authentication',
+    twoFactorSubtitle: 'Secure your account with 2FA',
+    twoFactorCode: '2FA Code',
+    twoFactorCodePlaceholder: 'Enter 6-digit code',
+    twoFactorCodeHelp: 'Enter the 6-digit code from your authenticator app',
+    verify2FA: 'Verify 2FA',
+    twoFactorRequired: 'Two-factor authentication is required',
+    // Form validation
+    fieldRequired: 'This field is required',
+    invalidEmail: 'Please enter a valid email address',
+    passwordTooShort: 'Password must be at least 6 characters long',
+    // Navigation
+    backToHome: 'Back to Home',
+    signInLink: 'Sign in',
+    signUpLink: 'Sign up'
   },
 
   // Dashboard
@@ -431,6 +471,124 @@ export default {
         title: 'Mobile First',
         description: 'Optimized for mobile devices with responsive design and intuitive interface.'
       }
+    },
+    stats: {
+      title: 'Trusted by Thousands',
+      users: 'Active Users',
+      transactions: 'Transactions',
+      uptime: 'Uptime',
+      support: 'Support'
+    },
+    testimonials: {
+      title: 'What Our Users Say',
+      subtitle: 'Don\'t just take our word for it. Here\'s what our community has to say about SecureWallet.',
+      testimonial1: {
+        text: 'SecureWallet has completely transformed how I manage my finances. The security features give me peace of mind, and the user interface is incredibly intuitive.',
+        name: 'Sarah Johnson',
+        position: 'Small Business Owner'
+      },
+      testimonial2: {
+        text: 'I\'ve tried many digital wallets, but SecureWallet stands out for its reliability and customer support. The 2FA feature is excellent for security.',
+        name: 'Michael Chen',
+        position: 'Software Developer'
+      },
+      testimonial3: {
+        text: 'As someone who travels frequently, I love how SecureWallet works seamlessly across all my devices. The mobile app is fantastic!',
+        name: 'Emily Rodriguez',
+        position: 'Digital Nomad'
+      }
+    },
+    pricing: {
+      title: 'Choose Your Plan',
+      subtitle: 'Select the perfect plan that fits your needs and start your secure financial journey today.',
+      basic: {
+        title: 'Basic',
+        price: 'Free',
+        description: 'Perfect for getting started',
+        feature1: 'Basic wallet functionality',
+        feature2: 'Up to 5 transactions/month',
+        feature3: 'Email support',
+        button: 'Get Started Free'
+      },
+      professional: {
+        title: 'Professional',
+        price: '$9.99/month',
+        description: 'Ideal for active users',
+        badge: 'Most Popular',
+        feature1: 'Everything in Basic',
+        feature2: 'Unlimited transactions',
+        feature3: 'Priority support',
+        feature4: 'Advanced security features',
+        button: 'Start Professional'
+      },
+      enterprise: {
+        title: 'Enterprise',
+        price: 'Custom',
+        description: 'For businesses and teams',
+        feature1: 'Everything in Professional',
+        feature2: 'Team management',
+        feature3: 'Custom integrations',
+        button: 'Contact Sales'
+      }
+    },
+    cta: {
+      title: 'Ready to Get Started?',
+      subtitle: 'Join thousands of users who trust SecureWallet for their financial needs. Start your secure journey today!',
+      primaryButton: 'Create Free Account',
+      secondaryButton: 'Contact Support'
+    }
+  },
+
+  // Security Tips
+  security: {
+    tips: {
+      tip1: 'Two-factor authentication supported',
+      tip2: 'Your data is encrypted at rest and in transit',
+      tip3: 'Protect your account with strong credentials'
+    }
+  },
+
+  // Blog System
+  blog: {
+    title: 'Blog & Insights',
+    subtitle: 'Discover the latest trends, security tips, and industry insights from our expert team.',
+    searchPlaceholder: 'Search articles...',
+    readTime: 'min read',
+    backToBlog: 'Back to Blog',
+    readMore: 'Read More',
+    previous: 'Previous',
+    next: 'Next',
+    tags: 'Tags',
+    share: 'Share this article',
+    shareTwitter: 'Share on Twitter',
+    shareFacebook: 'Share on Facebook',
+    shareLinkedIn: 'Share on LinkedIn',
+    relatedPosts: 'Related Articles',
+    loading: 'Loading articles...',
+    categories: {
+      security: 'Security',
+      technology: 'Technology',
+      finance: 'Finance'
+    },
+    noResults: {
+      title: 'No articles found',
+      description: 'Try adjusting your search terms or filters to find what you\'re looking for.',
+      clearFilters: 'Clear All Filters'
+    },
+    error: {
+      title: 'Error Loading Articles',
+      retry: 'Try Again'
+    },
+    comments: {
+      title: 'Comments',
+      addComment: 'Add a Comment',
+      namePlaceholder: 'Your Name',
+      emailPlaceholder: 'Your Email',
+      contentPlaceholder: 'Share your thoughts...',
+      submit: 'Post Comment',
+      submitting: 'Posting...',
+      noComments: 'No comments yet. Be the first to share your thoughts!',
+      loading: 'Loading comments...'
     }
   }
 }

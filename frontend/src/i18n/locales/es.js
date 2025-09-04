@@ -81,7 +81,47 @@ export default {
     invalidCredentials: 'Correo electrónico o contraseña inválidos',
     accountCreated: 'Cuenta creada exitosamente',
     passwordResetSent: 'Correo de restablecimiento enviado',
-    passwordResetSuccess: 'Contraseña restablecida exitosamente'
+    passwordResetSuccess: 'Contraseña restablecida exitosamente',
+    // Login form
+    usernameOrEmail: 'Nombre de Usuario o Correo',
+    usernameOrEmailPlaceholder: 'Ingresa tu nombre de usuario o correo',
+    passwordPlaceholder: 'Ingresa tu contraseña',
+    signInButton: 'Iniciar Sesión',
+    signingIn: 'Iniciando Sesión...',
+    // Register form
+    username: 'Nombre de Usuario',
+    usernamePlaceholder: 'Elige un nombre de usuario',
+    emailPlaceholder: 'Ingresa tu correo electrónico',
+    passwordPlaceholder: 'Crea una contraseña',
+    confirmPasswordPlaceholder: 'Confirma tu contraseña',
+    createAccountButton: 'Crear Cuenta',
+    creatingAccount: 'Creando Cuenta...',
+    passwordsDoNotMatch: 'Las contraseñas no coinciden.',
+    registrationFailed: 'El registro falló. Por favor, inténtalo de nuevo.',
+    // Password Reset form
+    resetPasswordTitle: 'Restablecer Contraseña',
+    resetPasswordSubtitle: 'Ingresa tu correo para recibir instrucciones de restablecimiento',
+    sendResetLink: 'Enviar Enlace de Restablecimiento',
+    sending: 'Enviando...',
+    passwordResetEmailSent: '¡Correo de restablecimiento de contraseña enviado! Por favor, revisa tu bandeja de entrada.',
+    failedToSendResetEmail: 'No se pudo enviar el correo de restablecimiento. Por favor, inténtalo de nuevo.',
+    rememberPassword: '¿Recuerdas tu contraseña?',
+    // 2FA
+    twoFactorTitle: 'Autenticación de Dos Factores',
+    twoFactorSubtitle: 'Asegura tu cuenta con 2FA',
+    twoFactorCode: 'Código 2FA',
+    twoFactorCodePlaceholder: 'Ingresa el código de 6 dígitos',
+    twoFactorCodeHelp: 'Ingresa el código de 6 dígitos de tu aplicación autenticadora',
+    verify2FA: 'Verificar 2FA',
+    twoFactorRequired: 'Se requiere autenticación de dos factores',
+    // Form validation
+    fieldRequired: 'Este campo es obligatorio',
+    invalidEmail: 'Por favor, ingresa un correo electrónico válido',
+    passwordTooShort: 'La contraseña debe tener al menos 6 caracteres',
+    // Navigation
+    backToHome: 'Volver al Inicio',
+    signInLink: 'Iniciar sesión',
+    signUpLink: 'Registrarse'
   },
 
   // Dashboard
@@ -463,6 +503,124 @@ export default {
         title: 'Móvil Primero',
         description: 'Optimizado para dispositivos móviles con diseño responsivo e interfaz intuitiva.'
       }
+    },
+    stats: {
+      title: 'Confiado por Miles',
+      users: 'Usuarios Activos',
+      transactions: 'Transacciones',
+      uptime: 'Tiempo Activo',
+      support: 'Soporte'
+    },
+    testimonials: {
+      title: 'Lo que Dicen Nuestros Usuarios',
+      subtitle: 'No solo tomes nuestra palabra. Aquí está lo que nuestra comunidad dice sobre SecureWallet.',
+      testimonial1: {
+        text: 'SecureWallet ha transformado completamente cómo gestiono mis finanzas. Las características de seguridad me dan tranquilidad, y la interfaz de usuario es increíblemente intuitiva.',
+        name: 'Sarah Johnson',
+        position: 'Propietaria de Pequeña Empresa'
+      },
+      testimonial2: {
+        text: 'He probado muchas billeteras digitales, pero SecureWallet se destaca por su confiabilidad y soporte al cliente. La función 2FA es excelente para la seguridad.',
+        name: 'Michael Chen',
+        position: 'Desarrollador de Software'
+      },
+      testimonial3: {
+        text: 'Como alguien que viaja frecuentemente, me encanta cómo SecureWallet funciona sin problemas en todos mis dispositivos. ¡La aplicación móvil es fantástica!',
+        name: 'Emily Rodriguez',
+        position: 'Nómada Digital'
+      }
+    },
+    pricing: {
+      title: 'Elige Tu Plan',
+      subtitle: 'Selecciona el plan perfecto que se adapte a tus necesidades y comienza tu viaje financiero seguro hoy.',
+      basic: {
+        title: 'Básico',
+        price: 'Gratis',
+        description: 'Perfecto para comenzar',
+        feature1: 'Funcionalidad básica de billetera',
+        feature2: 'Hasta 5 transacciones/mes',
+        feature3: 'Soporte por email',
+        button: 'Comenzar Gratis'
+      },
+      professional: {
+        title: 'Profesional',
+        price: '$9.99/mes',
+        description: 'Ideal para usuarios activos',
+        badge: 'Más Popular',
+        feature1: 'Todo en Básico',
+        feature2: 'Transacciones ilimitadas',
+        feature3: 'Soporte prioritario',
+        feature4: 'Características de seguridad avanzadas',
+        button: 'Comenzar Profesional'
+      },
+      enterprise: {
+        title: 'Empresarial',
+        price: 'Personalizado',
+        description: 'Para negocios y equipos',
+        feature1: 'Todo en Profesional',
+        feature2: 'Gestión de equipo',
+        feature3: 'Integraciones personalizadas',
+        button: 'Contactar Ventas'
+      }
+    },
+    cta: {
+      title: '¿Listo para Comenzar?',
+      subtitle: 'Únete a miles de usuarios que confían en SecureWallet para sus necesidades financieras. ¡Comienza tu viaje seguro hoy!',
+      primaryButton: 'Crear Cuenta Gratis',
+      secondaryButton: 'Contactar Soporte'
+    }
+  },
+
+  // Security Tips
+  security: {
+    tips: {
+      tip1: 'Autenticación de dos factores soportada',
+      tip2: 'Tus datos están encriptados en reposo y en tránsito',
+      tip3: 'Protege tu cuenta con credenciales fuertes'
+    }
+  },
+
+  // Blog System
+  blog: {
+    title: 'Blog e Información',
+    subtitle: 'Descubre las últimas tendencias, consejos de seguridad e información de la industria de nuestro equipo experto.',
+    searchPlaceholder: 'Buscar artículos...',
+    readTime: 'min de lectura',
+    backToBlog: 'Volver al Blog',
+    readMore: 'Leer Más',
+    previous: 'Anterior',
+    next: 'Siguiente',
+    tags: 'Etiquetas',
+    share: 'Compartir este artículo',
+    shareTwitter: 'Compartir en Twitter',
+    shareFacebook: 'Compartir en Facebook',
+    shareLinkedIn: 'Compartir en LinkedIn',
+    relatedPosts: 'Artículos Relacionados',
+    loading: 'Cargando artículos...',
+    categories: {
+      security: 'Seguridad',
+      technology: 'Tecnología',
+      finance: 'Finanzas'
+    },
+    noResults: {
+      title: 'No se encontraron artículos',
+      description: 'Intenta ajustar tus términos de búsqueda o filtros para encontrar lo que buscas.',
+      clearFilters: 'Limpiar Todos los Filtros'
+    },
+    error: {
+      title: 'Error al Cargar Artículos',
+      retry: 'Intentar de Nuevo'
+    },
+    comments: {
+      title: 'Comentarios',
+      addComment: 'Agregar un Comentario',
+      namePlaceholder: 'Tu Nombre',
+      emailPlaceholder: 'Tu Email',
+      contentPlaceholder: 'Comparte tus pensamientos...',
+      submit: 'Publicar Comentario',
+      submitting: 'Publicando...',
+      noComments: 'Aún no hay comentarios. ¡Sé el primero en compartir tus pensamientos!',
+      loading: 'Cargando comentarios...'
     }
   }
 }

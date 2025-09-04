@@ -81,7 +81,47 @@ export default {
     invalidCredentials: 'Geçersiz e-posta veya şifre',
     accountCreated: 'Hesap başarıyla oluşturuldu',
     passwordResetSent: 'Şifre sıfırlama e-postası gönderildi',
-    passwordResetSuccess: 'Şifre başarıyla sıfırlandı'
+    passwordResetSuccess: 'Şifre başarıyla sıfırlandı',
+    // Login form
+    usernameOrEmail: 'Kullanıcı Adı veya E-posta',
+    usernameOrEmailPlaceholder: 'Kullanıcı adınızı veya e-postanızı girin',
+    passwordPlaceholder: 'Şifrenizi girin',
+    signInButton: 'Giriş Yap',
+    signingIn: 'Giriş Yapılıyor...',
+    // Register form
+    username: 'Kullanıcı Adı',
+    usernamePlaceholder: 'Bir kullanıcı adı seçin',
+    emailPlaceholder: 'E-postanızı girin',
+    passwordPlaceholder: 'Şifre oluşturun',
+    confirmPasswordPlaceholder: 'Şifrenizi onaylayın',
+    createAccountButton: 'Hesap Oluştur',
+    creatingAccount: 'Hesap Oluşturuluyor...',
+    passwordsDoNotMatch: 'Şifreler eşleşmiyor.',
+    registrationFailed: 'Kayıt başarısız. Lütfen tekrar deneyin.',
+    // Password Reset form
+    resetPasswordTitle: 'Şifreyi Sıfırla',
+    resetPasswordSubtitle: 'Sıfırlama talimatları için e-postanızı girin',
+    sendResetLink: 'Sıfırlama Bağlantısı Gönder',
+    sending: 'Gönderiliyor...',
+    passwordResetEmailSent: 'Şifre sıfırlama e-postası gönderildi! Lütfen gelen kutunuzu kontrol edin.',
+    failedToSendResetEmail: 'Sıfırlama e-postası gönderilemedi. Lütfen tekrar deneyin.',
+    rememberPassword: 'Şifrenizi hatırladınız mı?',
+    // 2FA
+    twoFactorTitle: 'İki Faktörlü Kimlik Doğrulama',
+    twoFactorSubtitle: 'Hesabınızı 2FA ile güvenli hale getirin',
+    twoFactorCode: '2FA Kodu',
+    twoFactorCodePlaceholder: '6 haneli kodu girin',
+    twoFactorCodeHelp: 'Kimlik doğrulayıcı uygulamanızdan 6 haneli kodu girin',
+    verify2FA: '2FA\'yı Doğrula',
+    twoFactorRequired: 'İki faktörlü kimlik doğrulama gerekli',
+    // Form validation
+    fieldRequired: 'Bu alan zorunludur',
+    invalidEmail: 'Lütfen geçerli bir e-posta adresi girin',
+    passwordTooShort: 'Şifre en az 6 karakter olmalıdır',
+    // Navigation
+    backToHome: 'Ana Sayfaya Dön',
+    signInLink: 'Giriş yap',
+    signUpLink: 'Kayıt ol'
   },
 
   // Dashboard
@@ -430,6 +470,124 @@ export default {
         title: 'Mobil Öncelikli',
         description: 'Duyarlı tasarım ve sezgisel arayüz ile mobil cihazlar için optimize edilmiştir.'
       }
+    },
+    stats: {
+      title: 'Binlerce Kullanıcı Tarafından Güvenilen',
+      users: 'Aktif Kullanıcı',
+      transactions: 'İşlem',
+      uptime: 'Çalışma Süresi',
+      support: 'Destek'
+    },
+    testimonials: {
+      title: 'Kullanıcılarımız Ne Diyor',
+      subtitle: 'Sadece bizim sözümüze güvenmeyin. İşte topluluğumuzun SecureWallet hakkında söyledikleri.',
+      testimonial1: {
+        text: 'SecureWallet finanslarımı yönetme şeklimi tamamen değiştirdi. Güvenlik özellikleri bana huzur veriyor ve kullanıcı arayüzü inanılmaz sezgisel.',
+        name: 'Sarah Johnson',
+        position: 'Küçük İşletme Sahibi'
+      },
+      testimonial2: {
+        text: 'Birçok dijital cüzdan denedim ama SecureWallet güvenilirliği ve müşteri desteği ile öne çıkıyor. 2FA özelliği güvenlik için mükemmel.',
+        name: 'Michael Chen',
+        position: 'Yazılım Geliştirici'
+      },
+      testimonial3: {
+        text: 'Sık seyahat eden biri olarak, SecureWallet\'ın tüm cihazlarımda sorunsuz çalışmasını seviyorum. Mobil uygulama harika!',
+        name: 'Emily Rodriguez',
+        position: 'Dijital Göçebe'
+      }
+    },
+    pricing: {
+      title: 'Planınızı Seçin',
+      subtitle: 'İhtiyaçlarınıza uygun mükemmel planı seçin ve güvenli finansal yolculuğunuza bugün başlayın.',
+      basic: {
+        title: 'Temel',
+        price: 'Ücretsiz',
+        description: 'Başlamak için mükemmel',
+        feature1: 'Temel cüzdan işlevselliği',
+        feature2: 'Aya kadar 5 işlem',
+        feature3: 'E-posta desteği',
+        button: 'Ücretsiz Başlayın'
+      },
+      professional: {
+        title: 'Profesyonel',
+        price: '9,99$/ay',
+        description: 'Aktif kullanıcılar için ideal',
+        badge: 'En Popüler',
+        feature1: 'Temel\'deki her şey',
+        feature2: 'Sınırsız işlem',
+        feature3: 'Öncelikli destek',
+        feature4: 'Gelişmiş güvenlik özellikleri',
+        button: 'Profesyonel\'i Başlatın'
+      },
+      enterprise: {
+        title: 'Kurumsal',
+        price: 'Özel',
+        description: 'İşletmeler ve ekipler için',
+        feature1: 'Profesyonel\'deki her şey',
+        feature2: 'Ekip yönetimi',
+        feature3: 'Özel entegrasyonlar',
+        button: 'Satış Ekibi ile İletişim'
+      }
+    },
+    cta: {
+      title: 'Başlamaya Hazır mısınız?',
+      subtitle: 'Finansal ihtiyaçları için SecureWallet\'a güvenen binlerce kullanıcıya katılın. Güvenli yolculuğunuza bugün başlayın!',
+      primaryButton: 'Ücretsiz Hesap Oluşturun',
+      secondaryButton: 'Destek ile İletişim'
+    }
+  },
+
+  // Security Tips
+  security: {
+    tips: {
+      tip1: 'İki faktörlü kimlik doğrulama desteklenir',
+      tip2: 'Verileriniz hem saklanırken hem de aktarılırken şifrelenir',
+      tip3: 'Hesabınızı güçlü kimlik bilgileri ile koruyun'
+    }
+  },
+
+  // Blog System
+  blog: {
+    title: 'Blog ve İçgörüler',
+    subtitle: 'Uzman ekibimizden en son trendler, güvenlik ipuçları ve sektör içgörülerini keşfedin.',
+    searchPlaceholder: 'Makale ara...',
+    readTime: 'dakika okuma',
+    backToBlog: 'Blog\'a Dön',
+    readMore: 'Devamını Oku',
+    previous: 'Önceki',
+    next: 'Sonraki',
+    tags: 'Etiketler',
+    share: 'Bu makaleyi paylaş',
+    shareTwitter: 'Twitter\'da Paylaş',
+    shareFacebook: 'Facebook\'ta Paylaş',
+    shareLinkedIn: 'LinkedIn\'de Paylaş',
+    relatedPosts: 'İlgili Makaleler',
+    loading: 'Makaleler yükleniyor...',
+    categories: {
+      security: 'Güvenlik',
+      technology: 'Teknoloji',
+      finance: 'Finans'
+    },
+    noResults: {
+      title: 'Makale bulunamadı',
+      description: 'Aradığınızı bulmak için arama terimlerinizi veya filtrelerinizi ayarlamayı deneyin.',
+      clearFilters: 'Tüm Filtreleri Temizle'
+    },
+    error: {
+      title: 'Makaleler Yüklenirken Hata',
+      retry: 'Tekrar Dene'
+    },
+    comments: {
+      title: 'Yorumlar',
+      addComment: 'Yorum Ekle',
+      namePlaceholder: 'Adınız',
+      emailPlaceholder: 'E-posta Adresiniz',
+      contentPlaceholder: 'Düşüncelerinizi paylaşın...',
+      submit: 'Yorumu Gönder',
+      submitting: 'Gönderiliyor...',
+      noComments: 'Henüz yorum yok. İlk yorumu siz yapın!',
+      loading: 'Yorumlar yükleniyor...'
     }
   }
 }

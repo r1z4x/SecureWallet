@@ -150,6 +150,9 @@ func main() {
 		routes.SetupSecurityRoutes(api)
 	}
 
+	// Blog routes (public access)
+	routes.BlogRoutes(r, config.GetDB())
+
 	// Root endpoint
 	r.GET("/", func(c *gin.Context) {
 		c.JSON(200, gin.H{

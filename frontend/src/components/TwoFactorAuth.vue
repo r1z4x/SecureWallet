@@ -1,9 +1,24 @@
 <template>
   <div>
+    <!-- Logo -->
+    <div class="text-center mb-6">
+      <img src="@/assets/logo.svg" alt="Logo" class="max-w-80 mx-auto">
+    </div>
+    
+    <!-- Back to Home Link -->
+    <div class="mb-4">
+      <router-link 
+        to="/" 
+        class="flex items-center text-primary-600 hover:text-primary-800 transition-colors text-sm"
+      >
+        <i class="fas fa-arrow-left mr-2"></i>
+        <span>{{ $t('auth.backToHome') }}</span>
+      </router-link>
+    </div>
     
     <div v-if="loading" class="text-center py-4">
       <i class="fas fa-spinner fa-spin text-2xl text-primary-600"></i>
-      <p class="text-gray-600 mt-2">Loading...</p>
+      <p class="text-gray-600 mt-2">{{ $t('common.loading') }}</p>
     </div>
 
     <div v-else-if="twoFactorEnabled" class="space-y-4">

@@ -22,6 +22,8 @@ import TermsOfService from './views/TermsOfService.vue'
 import FAQ from './views/FAQ.vue'
 import UserGuide from './views/UserGuide.vue'
 import SecurityTips from './views/SecurityTips.vue'
+import Blog from './views/Blog.vue'
+import BlogPost from './views/BlogPost.vue'
 
 // Import stores
 import { createPinia } from 'pinia'
@@ -131,6 +133,18 @@ const router = createRouter({
       path: '/security-tips',
       name: 'SecurityTips',
       component: SecurityTips,
+      meta: { requiresAuth: false }
+    },
+    {
+      path: '/blog',
+      name: 'Blog',
+      component: Blog,
+      meta: { requiresAuth: false }
+    },
+    {
+      path: '/blog/:slug',
+      name: 'BlogPost',
+      component: BlogPost,
       meta: { requiresAuth: false }
     },
     // Catch-all route for invalid paths

@@ -135,6 +135,10 @@ func autoMigrate() error {
 		&models.AuditLog{},
 		&models.SupportTicket{},
 		&models.LoginHistory{},
+		&models.BlogPost{},
+		&models.BlogComment{},
+		&models.BlogCategory{},
+		&models.BlogTag{},
 	)
 }
 

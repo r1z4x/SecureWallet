@@ -53,6 +53,10 @@ func (dm *SampleDataManager) InitializeDatabase() error {
 		&models.AuditLog{},
 		&models.SupportTicket{},
 		&models.LoginHistory{},
+		&models.BlogPost{},
+		&models.BlogComment{},
+		&models.BlogCategory{},
+		&models.BlogTag{},
 	); err != nil {
 		log.Printf("Error migrating database: %v", err)
 		return err
@@ -104,6 +108,26 @@ func (dm *SampleDataManager) ClearSampleData() error {
 	if err := tx.Unscoped().Where("1=1").Delete(&models.Wallet{}).Error; err != nil {
 		tx.Rollback()
 		return fmt.Errorf("failed to clear wallets: %v", err)
+	}
+
+	if err := tx.Unscoped().Where("1=1").Delete(&models.BlogComment{}).Error; err != nil {
+		tx.Rollback()
+		return fmt.Errorf("failed to clear blog comments: %v", err)
+	}
+
+	if err := tx.Unscoped().Where("1=1").Delete(&models.BlogPost{}).Error; err != nil {
+		tx.Rollback()
+		return fmt.Errorf("failed to clear blog posts: %v", err)
+	}
+
+	if err := tx.Unscoped().Where("1=1").Delete(&models.BlogTag{}).Error; err != nil {
+		tx.Rollback()
+		return fmt.Errorf("failed to clear blog tags: %v", err)
+	}
+
+	if err := tx.Unscoped().Where("1=1").Delete(&models.BlogCategory{}).Error; err != nil {
+		tx.Rollback()
+		return fmt.Errorf("failed to clear blog categories: %v", err)
 	}
 
 	if err := tx.Unscoped().Where("1=1").Delete(&models.User{}).Error; err != nil {
@@ -164,6 +188,10 @@ func (dm *SampleDataManager) ResetDatabase() error {
 
 	if err := dm.CreateSampleLoginHistory(); err != nil {
 		return fmt.Errorf("failed to create sample login history: %v", err)
+	}
+
+	if err := dm.CreateSampleBlogData(); err != nil {
+		return fmt.Errorf("failed to create sample blog data: %v", err)
 	}
 
 	log.Println("Database reset completed successfully")
@@ -296,7 +324,11 @@ func (dm *SampleDataManager) CreateSampleUsers() error {
 	// Create admin user first
 	adminUser := models.User{
 		Username:     "admin",
+		Name:         "Admin User",
 		Email:        "admin@securewallet.com",
+		Title:        "System Administrator",
+		Avatar:       "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face",
+		Bio:          "System administrator with full access to all features.",
 		PasswordHash: "", // Will be set after creation
 		IsActive:     true,
 		IsAdmin:      true,
@@ -325,7 +357,11 @@ func (dm *SampleDataManager) CreateSampleUsers() error {
 	// Create standard user
 	standardUser := models.User{
 		Username:     "user",
+		Name:         "Standard User",
 		Email:        "user@securewallet.com",
+		Title:        "Regular User",
+		Avatar:       "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face",
+		Bio:          "Regular user with standard access to wallet features.",
 		PasswordHash: "", // Will be set after creation
 		IsActive:     true,
 		IsAdmin:      false,
@@ -355,6 +391,16 @@ func (dm *SampleDataManager) CreateSampleUsers() error {
 	firstNames := []string{"John", "Jane", "Bob", "Alice", "Charlie", "Diana", "Edward", "Fiona", "George", "Helen", "Ian", "Julia", "Kevin", "Laura", "Michael", "Nancy", "Oliver", "Patricia", "Quinn", "Rachel", "Steven", "Tina", "Ulysses", "Victoria", "William", "Xena", "Yuki", "Zachary"}
 	lastNames := []string{"Smith", "Johnson", "Williams", "Brown", "Jones", "Garcia", "Miller", "Davis", "Rodriguez", "Martinez", "Hernandez", "Lopez", "Gonzalez", "Wilson", "Anderson", "Thomas", "Taylor", "Moore", "Jackson", "Martin", "Lee", "Perez", "Thompson", "White", "Harris", "Sanchez", "Clark", "Ramirez", "Lewis", "Robinson"}
 	domains := []string{"gmail.com", "yahoo.com", "hotmail.com", "outlook.com", "example.com", "test.com", "demo.com", "sample.com"}
+	avatars := []string{
+		"https://images.unsplash.com/photo-1494790108755-2616b612b786?w=100&h=100&fit=crop&crop=face",
+		"https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face",
+		"https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face",
+		"https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face",
+		"https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&h=100&fit=crop&crop=face",
+		"https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=100&h=100&fit=crop&crop=face",
+		"https://images.unsplash.com/photo-1517841905240-472988babdf9?w=100&h=100&fit=crop&crop=face",
+		"https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop&crop=face",
+	}
 
 	// Create 50 random users
 	for i := 1; i <= 50; i++ {
@@ -370,7 +416,11 @@ func (dm *SampleDataManager) CreateSampleUsers() error {
 
 		user := models.User{
 			Username:     username,
+			Name:         fmt.Sprintf("%s %s", firstName, lastName),
 			Email:        email,
+			Title:        "User",
+			Avatar:       avatars[i%len(avatars)],
+			Bio:          fmt.Sprintf("User %s %s", firstName, lastName),
 			PasswordHash: "", // Will be set after creation
 			IsActive:     true,
 			IsAdmin:      isAdmin,
@@ -555,20 +605,175 @@ func (dm *SampleDataManager) CreateSampleLoginHistory() error {
 	return nil
 }
 
+// CreateSampleBlogData creates sample blog data
+func (dm *SampleDataManager) CreateSampleBlogData() error {
+	log.Println("Creating sample blog data...")
+
+	// Create blog categories
+	categories := []models.BlogCategory{
+		{
+			Name:        "Security",
+			Slug:        "security",
+			Description: "Articles about cybersecurity and digital wallet security",
+			Color:       "#DC2626", // Red
+		},
+		{
+			Name:        "Technology",
+			Slug:        "technology",
+			Description: "Articles about blockchain and fintech technology",
+			Color:       "#2563EB", // Blue
+		},
+		{
+			Name:        "Finance",
+			Slug:        "finance",
+			Description: "Articles about financial trends and digital payments",
+			Color:       "#059669", // Green
+		},
+	}
+
+	for _, category := range categories {
+		if err := dm.db.Create(&category).Error; err != nil {
+			log.Printf("Error creating blog category %s: %v", category.Name, err)
+			continue
+		}
+	}
+
+	// Create blog tags
+	tags := []models.BlogTag{
+		{Name: "Security", Slug: "security"},
+		{Name: "Digital Wallet", Slug: "digital-wallet"},
+		{Name: "Blockchain", Slug: "blockchain"},
+		{Name: "Fintech", Slug: "fintech"},
+		{Name: "Cryptocurrency", Slug: "cryptocurrency"},
+		{Name: "Biometrics", Slug: "biometrics"},
+		{Name: "2FA", Slug: "2fa"},
+		{Name: "DeFi", Slug: "defi"},
+		{Name: "Smart Contracts", Slug: "smart-contracts"},
+		{Name: "Contactless", Slug: "contactless"},
+	}
+
+	for _, tag := range tags {
+		if err := dm.db.Create(&tag).Error; err != nil {
+			log.Printf("Error creating blog tag %s: %v", tag.Name, err)
+			continue
+		}
+	}
+
+	// Get users for authors
+	var users []models.User
+	if err := dm.db.Find(&users).Error; err != nil {
+		log.Printf("Warning: Could not find users for blog posts: %v", err)
+		return fmt.Errorf("failed to get users: %v", err)
+	}
+
+	if len(users) == 0 {
+		log.Printf("Warning: No users found for blog posts")
+		return fmt.Errorf("no users found for blog posts")
+	}
+
+	// Create blog posts
+	posts := []models.BlogPost{
+		{
+			Title:    "Security Best Practices for Digital Wallets",
+			Slug:     "security-best-practices",
+			Excerpt:  "Learn the essential security measures to protect your digital wallet from cyber threats and ensure your financial data remains safe.",
+			Content:  `<h2>Introduction</h2><p>Digital wallets have become an essential part of our financial lives, offering convenience and accessibility. However, with this convenience comes the responsibility to ensure our financial data remains secure.</p><h2>Strong Password Management</h2><p>One of the most critical aspects of digital wallet security is password management. Always use strong, unique passwords that combine uppercase and lowercase letters, numbers, and special characters.</p><h2>Two-Factor Authentication</h2><p>Enable two-factor authentication (2FA) on your digital wallet account. This adds an extra layer of security by requiring a second form of verification beyond your password.</p>`,
+			Image:    "https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=800&h=400&fit=crop",
+			Category: "security",
+			Tags:     `["security", "digital-wallet", "cybersecurity", "best-practices"]`,
+			ReadTime: 5,
+			AuthorID: users[0].ID,
+			Status:   "published",
+		},
+		{
+			Title:    "The Future of Blockchain Technology",
+			Slug:     "blockchain-future",
+			Excerpt:  "Explore how blockchain technology is revolutionizing the financial industry and what to expect in the coming years.",
+			Content:  `<h2>Introduction</h2><p>Blockchain technology has evolved far beyond its cryptocurrency origins, becoming a foundational technology that promises to transform industries across the globe.</p><h2>Decentralized Finance (DeFi)</h2><p>DeFi represents one of the most exciting developments in blockchain technology. It enables financial services without traditional intermediaries, offering greater accessibility and transparency.</p><h2>Smart Contracts</h2><p>Smart contracts are self-executing agreements with the terms directly written into code. They eliminate the need for intermediaries and reduce costs while increasing efficiency.</p>`,
+			Image:    "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=800&h=400&fit=crop",
+			Category: "technology",
+			Tags:     `["blockchain", "defi", "smart-contracts", "technology"]`,
+			ReadTime: 8,
+			AuthorID: users[1].ID,
+			Status:   "published",
+		},
+		{
+			Title:    "Digital Wallet Trends in 2024",
+			Slug:     "digital-wallet-trends",
+			Excerpt:  "Discover the latest trends in digital wallet technology and how they're shaping the future of financial transactions.",
+			Content:  `<h2>Introduction</h2><p>Digital wallets are evolving rapidly, incorporating cutting-edge technologies to provide users with more secure, convenient, and feature-rich financial experiences.</p><h2>Biometric Authentication</h2><p>Fingerprint and facial recognition are becoming standard features in digital wallets, providing both security and convenience for users.</p><h2>Contactless Payments</h2><p>Near Field Communication (NFC) technology has made contactless payments the norm, allowing users to make transactions with a simple tap.</p>`,
+			Image:    "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&h=400&fit=crop",
+			Category: "finance",
+			Tags:     `["digital-wallet", "trends", "biometrics", "contactless"]`,
+			ReadTime: 6,
+			AuthorID: users[2].ID,
+			Status:   "published",
+		},
+	}
+
+	for _, post := range posts {
+		if err := dm.db.Create(&post).Error; err != nil {
+			log.Printf("Error creating blog post %s: %v", post.Title, err)
+			continue
+		}
+
+		// Create sample comments for each post
+		comments := []models.BlogComment{
+			{
+				PostID:    post.ID,
+				Name:      "John Doe",
+				Email:     "john.doe@example.com",
+				Content:   "Great article! I learned a lot about this topic. Thanks for sharing.",
+				Status:    "approved",
+				IPAddress: "192.168.1.100",
+				UserAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+			},
+			{
+				PostID:    post.ID,
+				Name:      "Jane Smith",
+				Email:     "jane.smith@example.com",
+				Content:   "Very informative. I've already implemented some of these suggestions.",
+				Status:    "approved",
+				IPAddress: "203.0.113.45",
+				UserAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
+			},
+		}
+
+		for _, comment := range comments {
+			if err := dm.db.Create(&comment).Error; err != nil {
+				log.Printf("Error creating comment for post %s: %v", post.Title, err)
+				continue
+			}
+		}
+	}
+
+	log.Printf("Created %d blog categories, %d blog tags, %d blog posts, and sample comments", len(categories), len(tags), len(posts))
+	return nil
+}
+
 // GetSampleDataStats returns statistics about sample data
 func (dm *SampleDataManager) GetSampleDataStats() map[string]interface{} {
 	var userCount, walletCount, transactionCount, loginHistoryCount int64
+	var blogPostCount, blogCommentCount, blogCategoryCount, blogTagCount int64
 
 	dm.db.Model(&models.User{}).Count(&userCount)
 	dm.db.Model(&models.Wallet{}).Count(&walletCount)
 	dm.db.Model(&models.Transaction{}).Count(&transactionCount)
 	dm.db.Model(&models.LoginHistory{}).Count(&loginHistoryCount)
+	dm.db.Model(&models.BlogPost{}).Count(&blogPostCount)
+	dm.db.Model(&models.BlogComment{}).Count(&blogCommentCount)
+	dm.db.Model(&models.BlogCategory{}).Count(&blogCategoryCount)
+	dm.db.Model(&models.BlogTag{}).Count(&blogTagCount)
 
 	return map[string]interface{}{
-		"users":         userCount,
-		"wallets":       walletCount,
-		"transactions":  transactionCount,
-		"login_history": loginHistoryCount,
+		"users":           userCount,
+		"wallets":         walletCount,
+		"transactions":    transactionCount,
+		"login_history":   loginHistoryCount,
+		"blog_posts":      blogPostCount,
+		"blog_comments":   blogCommentCount,
+		"blog_categories": blogCategoryCount,
+		"blog_tags":       blogTagCount,
 	}
 }
 
