@@ -2,24 +2,32 @@
   <div class="min-h-screen bg-gradient-to-br from-primary-50 to-blue-100">
 
     <!-- Header -->
-    <header class="bg-white shadow-sm">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between items-center py-6">
-          <div class="flex items-center">
-            <img src="@/assets/logo.svg" alt="Logo" class="h-10 max-w-64 w-auto mr-3">
-            <h1 class="text-2xl font-bold text-gray-900">
-              <sup class="text-red-500 text-xs">{{ $t('common.vulnerable') }}</sup>
-            </h1>
-          </div>
-          <div class="flex items-center space-x-4">
-            <LanguageSelector />
-            <router-link to="/" class="btn-secondary">
-              <i class="fas fa-home mr-2"></i>{{ $t('nav.home') }}
-            </router-link>
-          </div>
+    <AppHeader type="blog-post" />
+
+    <!-- Notification -->
+    <div 
+      v-if="notification.show" 
+      :class="[
+        'fixed top-4 right-4 z-50 max-w-sm p-4 rounded-lg shadow-lg transition-all duration-300',
+        notification.type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+      ]"
+    >
+      <div class="flex items-center justify-between">
+        <div class="flex items-center">
+          <i :class="[
+            'mr-3 text-lg',
+            notification.type === 'success' ? 'fas fa-check-circle' : 'fas fa-exclamation-circle'
+          ]"></i>
+          <p class="font-medium">{{ notification.message }}</p>
         </div>
+        <button 
+          @click="hideNotification"
+          class="ml-4 text-white hover:text-gray-200 transition-colors"
+        >
+          <i class="fas fa-times"></i>
+        </button>
       </div>
-    </header>
+    </div>
 
     <!-- Blog Post Content -->
     <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
@@ -313,13 +321,13 @@
 <script>
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import LanguageSelector from '@/components/LanguageSelector.vue'
+import AppHeader from '@/components/AppHeader.vue'
 import { blogService } from '@/services/blog.js'
 
 export default {
   name: 'BlogPost',
   components: {
-    LanguageSelector
+    AppHeader
   },
   setup() {
     const route = useRoute()
@@ -332,6 +340,13 @@ export default {
     const loadingComments = ref(true)
     const error = ref(null)
     const submittingComment = ref(false)
+    
+    // Notification state
+    const notification = ref({
+      show: false,
+      type: 'success', // 'success' or 'error'
+      message: ''
+    })
     
     // Comment pagination state
     const commentPagination = ref({
@@ -346,6 +361,23 @@ export default {
       email: '',
       content: ''
     })
+
+    // Notification functions
+    const showNotification = (type, message) => {
+      notification.value = {
+        show: true,
+        type,
+        message
+      }
+      // Auto hide after 5 seconds
+      setTimeout(() => {
+        notification.value.show = false
+      }, 5000)
+    }
+
+    const hideNotification = () => {
+      notification.value.show = false
+    }
 
     // Fetch blog post data
     const fetchPost = async () => {
@@ -412,12 +444,12 @@ export default {
         // Refresh comments and go to first page
         await fetchComments(1)
         
-        // Show success message (you can add a toast notification here)
-        console.log('Comment added successfully')
+        // Show success notification
+        showNotification('success', 'Yorumunuz başarıyla eklendi ve onay bekliyor!')
       } catch (err) {
         console.error('Error adding comment:', err)
-        // Show error message (you can add a toast notification here)
-        alert('Failed to add comment. Please try again.')
+        // Show error notification
+        showNotification('error', 'Yorum eklenirken bir hata oluştu. Lütfen tekrar deneyin.')
       } finally {
         submittingComment.value = false
       }
@@ -490,6 +522,9 @@ export default {
       loadingComments,
       error,
       commentForm,
+      notification,
+      showNotification,
+      hideNotification,
       submittingComment,
       commentPagination,
       getCategoryBadgeClass,

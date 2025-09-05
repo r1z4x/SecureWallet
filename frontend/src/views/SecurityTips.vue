@@ -1,6 +1,6 @@
 <template>
   <div class="min-h-screen bg-gray-50">
-    <Navigation />
+    <AppHeader type="authenticated" />
     
     <div class="container mx-auto px-4 py-8">
       <!-- Header -->
@@ -175,7 +175,7 @@
         </div>
       </div>
 
-      <!-- Navigation -->
+      <!-- AppHeader -->
       <div class="max-w-4xl mx-auto mt-12">
         <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
           <router-link
@@ -211,12 +211,12 @@
 <script>
 import { ref, computed } from 'vue'
 import { useAuthStore } from '@/stores/auth'
-import Navigation from '@/components/Navigation.vue'
+import AppHeader from '@/components/AppHeader.vue'
 
 export default {
   name: 'SecurityTips',
   components: {
-    Navigation
+    AppHeader
   },
   setup() {
     const authStore = useAuthStore()

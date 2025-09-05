@@ -3,7 +3,7 @@ import { apiClient } from './auth'
 export const transactionService = {
   // Get all transactions for current user
   async getTransactions(limit = 50) {
-    const response = await apiClient.get(`/transactions/?limit=${limit}`)
+    const response = await apiClient.get(`/transactions?limit=${limit}`)
     return response.data
   },
 
@@ -15,7 +15,7 @@ export const transactionService = {
 
   // Create new transaction
   async createTransaction(transactionData) {
-    const response = await apiClient.post('/transactions/', transactionData)
+    const response = await apiClient.post('/transactions', transactionData)
     return response.data
   },
 

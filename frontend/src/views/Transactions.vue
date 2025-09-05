@@ -1,6 +1,6 @@
 <template>
   <div class="min-h-screen bg-gray-50">
-    <Navigation />
+    <AppHeader type="authenticated" />
     
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <!-- Header -->
@@ -220,8 +220,8 @@
                 </div>
                 <div class="ml-4">
                   <p class="text-sm font-medium text-gray-900">
-                    <!-- VULNERABLE: Stored XSS - description rendered without sanitization -->
-                    <span v-html="transaction.description || 'Transaction'"></span>
+                    <!-- SECURE: Description is now properly escaped -->
+                    {{ transaction.description || 'Transaction' }}
                   </p>
                   <p class="text-xs text-gray-500">
                     {{ formatDate(transaction.created_at) }}
@@ -285,13 +285,13 @@
 <script>
 import { ref, onMounted, computed } from 'vue'
 import { useAuthStore } from '@/stores/auth'
-import Navigation from '@/components/Navigation.vue'
+import AppHeader from '@/components/AppHeader.vue'
 import { transactionService } from '@/services/transaction'
 
 export default {
   name: 'Transactions',
   components: {
-    Navigation
+    AppHeader
   },
   setup() {
     const authStore = useAuthStore()

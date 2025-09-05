@@ -197,3 +197,10 @@ site/
 # Local development
 .local/
 local/
+
+# Cron backup files
+crontab.backup*
+
+# Air backup files
+.air.toml.bak
+.air.toml*

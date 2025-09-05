@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"log"
 	"os"
 	"strings"
@@ -25,9 +26,19 @@ import (
 // @host localhost:8080
 // @BasePath /api
 func main() {
+	// Parse command line flags
+	cronJob := flag.String("cron", "", "Execute a specific cron job (comment-approval, backup, log-cleanup, security-monitor)")
+	flag.Parse()
+
 	// Load environment variables
 	if err := godotenv.Load(); err != nil {
 		log.Println("No .env file found, using system environment variables")
+	}
+
+	// Handle cron job execution
+	if *cronJob != "" {
+		executeCronJob(*cronJob)
+		return
 	}
 
 	// Initialize Redis
@@ -47,6 +58,9 @@ func main() {
 
 	// Initialize services
 	services.InitServices()
+	
+	// Initialize comment service (starts auto-approval scheduler)
+	services.NewCommentService()
 
 	// Now perform database reset if requested
 	if os.Getenv("RESET_DATABASE_ON_STARTUP") == "true" {
@@ -153,6 +167,9 @@ func main() {
 	// Blog routes (public access)
 	routes.BlogRoutes(r, config.GetDB())
 
+	// Cron routes (admin access)
+	routes.CronRoutes(r)
+
 	// Root endpoint
 	r.GET("/", func(c *gin.Context) {
 		c.JSON(200, gin.H{
@@ -207,4 +224,30 @@ func main() {
 	if err := r.Run(":" + port); err != nil {
 		log.Fatal("Failed to start server:", err)
 	}
+}
+
+// executeCronJob executes a specific cron job
+func executeCronJob(jobName string) {
+	log.Printf("Executing cron job: %s", jobName)
+
+	// Initialize Redis
+	if err := config.InitRedis(); err != nil {
+		log.Fatal("Failed to initialize Redis:", err)
+	}
+
+	// Initialize database connection
+	if err := config.InitDB(); err != nil {
+		log.Fatal("Failed to initialize database:", err)
+	}
+
+	// Initialize services
+	services.InitServices()
+
+	// Create cron service and execute the job
+	cronService := services.NewCronService()
+	if err := cronService.ExecuteCronJob(jobName); err != nil {
+		log.Fatal("Failed to execute cron job:", err)
+	}
+
+	log.Printf("Cron job %s completed successfully", jobName)
 }

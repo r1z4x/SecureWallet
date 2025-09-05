@@ -1,25 +1,7 @@
 <template>
   <div class="min-h-screen bg-gradient-to-br from-primary-50 to-blue-100">
     <!-- Header -->
-    <header class="bg-white shadow-sm">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between items-center py-6">
-          <div class="flex items-center">
-            <img src="@/assets/logo.svg" alt="Logo" class="h-12 w-auto mr-3">
-            <h1 class="text-2xl font-bold text-gray-900">
-              {{ $t('common.appName') }}
-              <sup class="text-red-500 text-xs">{{ $t('common.vulnerable') }}</sup>
-            </h1>
-          </div>
-          <div class="flex items-center space-x-4">
-            <LanguageSelector />
-            <router-link to="/" class="btn-secondary">
-              <i class="fas fa-home mr-2"></i>{{ $t('nav.home') }}
-            </router-link>
-          </div>
-        </div>
-      </div>
-    </header>
+    <AppHeader type="blog" />
 
     <!-- Blog Content -->
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
@@ -196,13 +178,13 @@
 
 <script>
 import { ref, computed, onMounted } from 'vue'
-import LanguageSelector from '@/components/LanguageSelector.vue'
+import AppHeader from '@/components/AppHeader.vue'
 import { blogService } from '@/services/blog'
 
 export default {
   name: 'Blog',
   components: {
-    LanguageSelector
+    AppHeader
   },
   setup() {
     const searchQuery = ref('')

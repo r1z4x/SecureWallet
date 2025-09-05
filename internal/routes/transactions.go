@@ -15,9 +15,9 @@ import (
 func SetupTransactionRoutes(router *gin.RouterGroup) {
 	transactions := router.Group("/transactions")
 	{
-		transactions.GET("/", middleware.AuthMiddleware(), getTransactions)
+		transactions.GET("", middleware.AuthMiddleware(), getTransactions)
 		transactions.GET("/:id", middleware.AuthMiddleware(), getTransaction)
-		transactions.POST("/", middleware.AuthMiddleware(), createTransaction)
+		transactions.POST("", middleware.AuthMiddleware(), createTransaction)
 		transactions.PUT("/:id", middleware.AuthMiddleware(), updateTransaction)
 		transactions.DELETE("/:id", middleware.AuthMiddleware(), deleteTransaction)
 	}

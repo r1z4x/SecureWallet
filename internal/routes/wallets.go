@@ -145,7 +145,6 @@ func transfer(c *gin.Context) {
 		return
 	}
 
-	// VULNERABLE: No HTML sanitization for description field - allows XSS
 	// SECURE: Validate description length
 	if len(transferReq.Description) > 255 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Description too long (max 255 characters)"})
@@ -283,6 +282,7 @@ func transfer(c *gin.Context) {
 			"email":    recipient.Email,
 		},
 		"transfer": gin.H{
+			"id":           outgoingTransaction.ID,
 			"amount":       transferReq.Amount,
 			"transfer_fee": transferFee,
 			"total_amount": totalAmount,

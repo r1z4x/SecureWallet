@@ -1,12 +1,16 @@
 package routes
 
 import (
+	"encoding/json"
+	"log"
 	"math"
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
@@ -119,6 +123,27 @@ func BlogRoutes(router *gin.Engine, db *gorm.DB) {
 				AuthorBio    string `json:"author_bio"`
 			}
 
+			// First get the raw data to see what we're working with
+			var rawPost struct {
+				ID           string `json:"id"`
+				Title        string `json:"title"`
+				Slug         string `json:"slug"`
+				Excerpt      string `json:"excerpt"`
+				Content      string `json:"content"`
+				Image        string `json:"image"`
+				Category     string `json:"category"`
+				Tags         string `json:"tags"`
+				ReadTime     int    `json:"read_time"`
+				ViewCount    int    `json:"view_count"`
+				PublishedAt  string `json:"published_at"`
+				CreatedAt    string `json:"created_at"`
+				AuthorID     string `json:"author_id"`
+				AuthorName   string `json:"author_name"`
+				AuthorTitle  string `json:"author_title"`
+				AuthorAvatar string `json:"author_avatar"`
+				AuthorBio    string `json:"author_bio"`
+			}
+
 			result := db.Table("blog_posts").
 				Select(`
 					blog_posts.id, blog_posts.title, blog_posts.slug, blog_posts.excerpt,
@@ -130,12 +155,19 @@ func BlogRoutes(router *gin.Engine, db *gorm.DB) {
 				`).
 				Joins("LEFT JOIN users ON blog_posts.author_id = users.id").
 				Where("blog_posts.slug = ? AND blog_posts.status = ?", slug, "published").
-				First(&post)
+				First(&rawPost)
+
+			// Copy to post struct
+			post = rawPost
 
 			if result.Error != nil {
 				c.JSON(http.StatusNotFound, gin.H{"error": "Blog post not found"})
 				return
 			}
+
+			// Debug: Log the raw tags data
+			log.Printf("DEBUG: Raw tags from DB: %q", post.Tags)
+			log.Printf("DEBUG: Raw tags length: %d", len(post.Tags))
 
 			// Increment view count
 			db.Model(&struct{ ID string }{ID: post.ID}).
@@ -175,6 +207,35 @@ func BlogRoutes(router *gin.Engine, db *gorm.DB) {
 				Limit(3).
 				Find(&relatedPosts)
 
+			// Parse tags from JSON string
+			var tags []string
+			if post.Tags != "" {
+				// Try to parse as JSON array first
+				if err := json.Unmarshal([]byte(post.Tags), &tags); err != nil {
+					// If JSON parsing fails, try to handle as comma-separated string
+					// or if it's already a single string, wrap it in an array
+					if post.Tags[0] == '[' && post.Tags[len(post.Tags)-1] == ']' {
+						// It looks like a JSON array but failed to parse, try to clean it up
+						cleaned := post.Tags[1 : len(post.Tags)-1] // Remove brackets
+						// Split by comma and clean up quotes
+						parts := strings.Split(cleaned, ",")
+						for _, part := range parts {
+							cleanedPart := strings.TrimSpace(part)
+							// Remove surrounding quotes if present
+							if len(cleanedPart) >= 2 && cleanedPart[0] == '"' && cleanedPart[len(cleanedPart)-1] == '"' {
+								cleanedPart = cleanedPart[1 : len(cleanedPart)-1]
+							}
+							if cleanedPart != "" {
+								tags = append(tags, cleanedPart)
+							}
+						}
+					} else {
+						// Treat as single string
+						tags = []string{post.Tags}
+					}
+				}
+			}
+
 			// Transform the data
 			transformedPost := map[string]interface{}{
 				"id":          post.ID,
@@ -184,7 +245,7 @@ func BlogRoutes(router *gin.Engine, db *gorm.DB) {
 				"content":     post.Content,
 				"image":       post.Image,
 				"category":    post.Category,
-				"tags":        strings.Split(post.Tags, ","),
+				"tags":        tags,
 				"readTime":    post.ReadTime,
 				"viewCount":   post.ViewCount,
 				"publishedAt": post.PublishedAt,
@@ -242,7 +303,7 @@ func BlogRoutes(router *gin.Engine, db *gorm.DB) {
 			if err := db.Table("blog_comments").
 				Select("id, name, content, status, created_at").
 				Where("post_id = ? AND status = ?", post.ID, "approved").
-				Order("created_at DESC").
+				Order("created_at DESC, id DESC").
 				Offset(offset).
 				Limit(limit).
 				Find(&comments).Error; err != nil {
@@ -285,6 +346,7 @@ func BlogRoutes(router *gin.Engine, db *gorm.DB) {
 
 			// Create the comment
 			newComment := map[string]interface{}{
+				"id":         uuid.New().String(),
 				"post_id":    post.ID,
 				"name":       comment.Name,
 				"email":      comment.Email,
@@ -292,6 +354,8 @@ func BlogRoutes(router *gin.Engine, db *gorm.DB) {
 				"status":     "pending", // Comments need approval by default
 				"ip_address": c.ClientIP(),
 				"user_agent": c.GetHeader("User-Agent"),
+				"created_at": time.Now(),
+				"updated_at": time.Now(),
 			}
 
 			if err := db.Table("blog_comments").Create(newComment).Error; err != nil {
@@ -334,6 +398,28 @@ func BlogRoutes(router *gin.Engine, db *gorm.DB) {
 			}
 
 			c.JSON(http.StatusOK, tags)
+		})
+
+		// Get comment statistics
+		blog.GET("/comments/stats", func(c *gin.Context) {
+			// Get comment stats
+			var totalComments int64
+			var pendingComments int64
+			var approvedComments int64
+
+			db.Table("blog_comments").Count(&totalComments)
+			db.Table("blog_comments").Where("status = ?", "pending").Count(&pendingComments)
+			db.Table("blog_comments").Where("status = ?", "approved").Count(&approvedComments)
+
+			c.JSON(http.StatusOK, gin.H{
+				"total_comments":    totalComments,
+				"pending_comments":  pendingComments,
+				"approved_comments": approvedComments,
+				"auto_approval": gin.H{
+					"enabled": true,
+					"delay":   "10m",
+				},
+			})
 		})
 	}
 }

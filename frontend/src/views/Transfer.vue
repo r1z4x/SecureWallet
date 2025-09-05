@@ -1,6 +1,6 @@
 <template>
   <div class="min-h-screen bg-gray-50">
-    <Navigation />
+    <AppHeader type="authenticated" />
     
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <!-- Header -->
@@ -199,8 +199,8 @@
               >
                 <div>
                   <p class="text-sm font-medium text-gray-900">
-                    <!-- VULNERABLE: Stored XSS - description rendered without sanitization -->
-                    <span v-html="transfer.description || 'Transfer'"></span>
+                    <!-- SECURE: Description is now properly escaped -->
+                    {{ transfer.description || 'Transfer' }}
                   </p>
                   <p class="text-xs text-gray-500">
                     {{ formatDate(transfer.created_at) }}
@@ -234,7 +234,7 @@
 <script>
 import { ref, onMounted, computed } from 'vue'
 import { useAuthStore } from '@/stores/auth'
-import Navigation from '@/components/Navigation.vue'
+import AppHeader from '@/components/AppHeader.vue'
 import { walletService } from '@/services/wallet'
 import { transactionService } from '@/services/transaction'
 import { userService } from '@/services/user'
@@ -242,7 +242,7 @@ import { userService } from '@/services/user'
 export default {
   name: 'Transfer',
   components: {
-    Navigation
+    AppHeader
   },
   setup() {
     const authStore = useAuthStore()

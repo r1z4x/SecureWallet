@@ -1,25 +1,7 @@
 <template>
   <div class="min-h-screen bg-gradient-to-br from-primary-50 to-blue-100">
     <!-- Header -->
-    <header class="bg-white shadow-sm">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between items-center py-6">
-          <div class="text-center lg:text-left flex">
-              <img src="@/assets/logo.svg" alt="Logo" class="max-w-64 w-full mx-auto lg:mx-0">
-              <sup class="text-red-500 text-xs ml-2 font-bold">{{ $t('common.vulnerable') }}</sup>
-            </div>
-          <div class="flex items-center space-x-4">
-            <LanguageSelector />
-            <router-link to="/auth/login" class="btn-primary">
-              <i class="fas fa-sign-in-alt mr-2"></i>{{ $t('auth.signIn') }}
-            </router-link>
-            <router-link to="/auth/register" class="btn-secondary">
-              <i class="fas fa-user-plus mr-2"></i>{{ $t('auth.register') }}
-            </router-link>
-          </div>
-        </div>
-      </div>
-    </header>
+    <AppHeader type="landing" />
 
     <!-- Hero Section -->
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
@@ -367,13 +349,13 @@
 
 <script>
 import { ref, onMounted } from 'vue'
-import LanguageSelector from '@/components/LanguageSelector.vue'
+import AppHeader from '@/components/AppHeader.vue'
 import { blogService } from '@/services/blog'
 
 export default {
   name: 'Landing',
   components: {
-    LanguageSelector
+    AppHeader
   },
   setup() {
     const latestPosts = ref([])

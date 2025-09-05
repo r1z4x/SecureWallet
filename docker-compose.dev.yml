@@ -77,12 +77,61 @@ services:
       - ACCESS_TOKEN_EXPIRE_MINUTES=30
       - USER_PASSWORD=User#2025
       - ADMIN_PASSWORD=Admin#2025
+      - AUTO_SETUP_CRON=${AUTO_SETUP_CRON:-true}
     depends_on:
       - mysql
       - mongodb
       - redis
     networks:
       - securewallet_network_dev
+
+  # Cron Service for Scheduled Tasks
+  cron:
+    build:
+      context: .
+      dockerfile: build/docker/Dockerfile.go.dev
+    container_name: securewallet_cron_dev
+    env_file:
+      - .env
+    volumes:
+      - .:/app
+      - ./logs/cron:/app/logs/cron
+    environment:
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_USER=securewallet_dev
+      - DB_PASSWORD=${MYSQL_PASSWORD:-securewalletpass_dev}
+      - DB_NAME=securewallet_dev
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - ENVIRONMENT=development
+      - AUTO_SETUP_CRON=true
+    depends_on:
+      - mysql
+      - mongodb
+      - redis
+      - backend
+    networks:
+      - securewallet_network_dev
+    command: >
+      sh -c "
+        echo '🚀 Starting SecureWallet Cron Service...' &&
+        apk add --no-cache dcron &&
+        mkdir -p /app/logs/cron &&
+        echo '⏳ Waiting for backend to be ready...' &&
+        sleep 30 &&
+        echo '⚙️ Setting up cron jobs...' &&
+        echo '*/5 * * * * cd /app && go run main.go --cron=comment-approval >> /app/logs/cron/comment-approval.log 2>&1' > /tmp/crontab &&
+        echo '0 * * * * cd /app && go run main.go --cron=backup >> /app/logs/cron/backup.log 2>&1' >> /tmp/crontab &&
+        echo '0 2 * * * cd /app && go run main.go --cron=log-cleanup >> /app/logs/cron/log-cleanup.log 2>&1' >> /tmp/crontab &&
+        echo '*/10 * * * * cd /app && go run main.go --cron=security-monitor >> /app/logs/cron/security-monitor.log 2>&1' >> /tmp/crontab &&
+        crontab /tmp/crontab &&
+        echo '✅ Cron jobs setup completed!' &&
+        echo '📋 Current crontab:' &&
+        crontab -l &&
+        echo '🔄 Starting cron daemon...' &&
+        crond -f -d 8
+      "
 
   # Frontend Application (Development)
   frontend:

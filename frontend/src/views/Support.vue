@@ -1,6 +1,6 @@
 <template>
   <div class="min-h-screen bg-gray-50">
-    <Navigation />
+    <AppHeader type="authenticated" />
     
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <!-- Header -->
@@ -399,13 +399,13 @@
 <script>
 import { ref, onMounted, computed } from 'vue'
 import { useAuthStore } from '@/stores/auth'
-import Navigation from '@/components/Navigation.vue'
+import AppHeader from '@/components/AppHeader.vue'
 import { supportService } from '@/services/support'
 
 export default {
   name: 'Support',
   components: {
-    Navigation
+    AppHeader
   },
   setup() {
     const authStore = useAuthStore()

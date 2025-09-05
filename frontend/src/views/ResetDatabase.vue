@@ -1,6 +1,6 @@
 <template>
   <div class="min-h-screen bg-gray-50">
-    <Navigation />
+    <AppHeader type="authenticated" />
     
     <!-- Header -->
     <div class="bg-white border-b border-gray-200">
@@ -123,24 +123,132 @@
         {{ error }}
       </div>
     </div>
+
+    <!-- Confirmation Overlay -->
+    <div v-if="isPageBlocked" class="fixed inset-0 bg-black bg-opacity-50 z-[10000] flex items-center justify-center">
+      <transition-group name="confirmation" tag="div" class="space-y-4">
+        <div
+          v-for="confirmation in pendingConfirmations"
+          :key="confirmation.id"
+          class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6"
+        >
+          <div class="flex items-center mb-4">
+            <div class="flex-shrink-0">
+              <i 
+                :class="[
+                  'h-6 w-6',
+                  {
+                    'fas fa-exclamation-triangle text-yellow-500': confirmation.type === 'warning',
+                    'fas fa-exclamation-circle text-red-500': confirmation.type === 'error',
+                    'fas fa-question-circle text-blue-500': confirmation.type === 'info',
+                    'fas fa-check-circle text-green-500': confirmation.type === 'success'
+                  }
+                ]"
+              ></i>
+            </div>
+            <div class="ml-3">
+              <h3 class="text-lg font-medium text-gray-900">
+                {{ confirmation.title }}
+              </h3>
+            </div>
+          </div>
+          
+          <div class="mb-6">
+            <p class="text-sm text-gray-600 break-words">
+              {{ confirmation.message }}
+            </p>
+          </div>
+          
+          <div class="flex justify-end space-x-3">
+            <button
+              @click="handleConfirmation(confirmation.id, false)"
+              :class="[
+                'px-4 py-2 text-sm font-medium rounded-md text-white focus:outline-none focus:ring-2 focus:ring-offset-2',
+                confirmation.cancelClass
+              ]"
+            >
+              {{ confirmation.cancelText }}
+            </button>
+            <button
+              @click="handleConfirmation(confirmation.id, true)"
+              :class="[
+                'px-4 py-2 text-sm font-medium rounded-md text-white focus:outline-none focus:ring-2 focus:ring-offset-2',
+                confirmation.confirmClass
+              ]"
+            >
+              {{ confirmation.confirmText }}
+            </button>
+          </div>
+        </div>
+      </transition-group>
+    </div>
   </div>
 </template>
 
 <script>
 import { ref, onMounted } from 'vue'
-import Navigation from '@/components/Navigation.vue'
+import { useI18n } from 'vue-i18n'
+import AppHeader from '@/components/AppHeader.vue'
 import { dataManagementService } from '@/services/dataManagement'
 
 export default {
   name: 'ResetDatabase',
   components: {
-    Navigation
+    AppHeader
   },
   setup() {
+    const { t } = useI18n()
     const loading = ref(false)
     const stats = ref({})
     const success = ref('')
     const error = ref('')
+    
+    // Confirmation states
+    const pendingConfirmations = ref([])
+    const confirmationId = ref(0)
+    const isPageBlocked = ref(false)
+
+    // Confirmation System
+    const showConfirmation = (message, options = {}) => {
+      return new Promise((resolve) => {
+        const id = ++confirmationId.value
+        const confirmation = {
+          id,
+          message: String(message),
+          type: options.type || 'warning',
+          title: options.title || t('common.confirmation'),
+          confirmText: options.confirmText || t('common.yes'),
+          cancelText: options.cancelText || t('common.no'),
+          confirmClass: options.confirmClass || 'bg-red-500 hover:bg-red-600',
+          cancelClass: options.cancelClass || 'bg-gray-500 hover:bg-gray-600',
+          timestamp: Date.now(),
+          resolve
+        }
+        
+        pendingConfirmations.value.push(confirmation)
+        isPageBlocked.value = true
+        
+        return confirmation
+      })
+    }
+
+    const handleConfirmation = (id, confirmed) => {
+      const index = pendingConfirmations.value.findIndex(c => c.id === id)
+      if (index > -1) {
+        const confirmation = pendingConfirmations.value[index]
+        confirmation.resolve(confirmed)
+        pendingConfirmations.value.splice(index, 1)
+        
+        // Unblock page if no more confirmations
+        if (pendingConfirmations.value.length === 0) {
+          isPageBlocked.value = false
+        }
+      }
+    }
+
+    const confirmAction = (message, options = {}) => {
+      return showConfirmation(message, options)
+    }
 
     const loadStats = async () => {
       try {
@@ -159,33 +267,46 @@ export default {
     }
 
     const resetDatabase = async () => {
-      if (!confirm('Are you sure you want to reset the database? This will clear all data and recreate sample data. This action cannot be undone.')) {
-        return
-      }
-      
-      loading.value = true
-      error.value = ''
-      success.value = ''
-      
       try {
-        // Use the new single endpoint that handles everything in the backend
-        const response = await dataManagementService.resetDatabase()
+        const confirmed = await confirmAction(t('resetDatabase.confirmReset'), {
+          type: 'error',
+          title: t('resetDatabase.resetDatabase'),
+          confirmText: t('resetDatabase.reset'),
+          cancelText: t('common.cancel'),
+          confirmClass: 'bg-red-500 hover:bg-red-600',
+          cancelClass: 'bg-gray-500 hover:bg-gray-600'
+        })
         
-        success.value = response.message || 'Database reset successfully! All data has been cleared and recreated.'
-        stats.value = response.stats || {}
-      } catch (err) {
-        console.error('Reset database error:', err)
-        if (err.response?.data?.error) {
-          error.value = `Failed to reset database: ${err.response.data.error}`
-        } else if (err.response?.data?.details) {
-          error.value = `Failed to reset database: ${err.response.data.details}`
-        } else if (err.message) {
-          error.value = `Failed to reset database: ${err.message}`
-        } else {
-          error.value = 'Failed to reset database: Unknown error occurred'
+        if (!confirmed) {
+          return
         }
-      } finally {
-        loading.value = false
+        
+        loading.value = true
+        error.value = ''
+        success.value = ''
+        
+        try {
+          // Use the new single endpoint that handles everything in the backend
+          const response = await dataManagementService.resetDatabase()
+          
+          success.value = response.message || t('resetDatabase.resetSuccess')
+          stats.value = response.stats || {}
+        } catch (err) {
+          console.error('Reset database error:', err)
+          if (err.response?.data?.error) {
+            error.value = `${t('resetDatabase.resetError')}: ${err.response.data.error}`
+          } else if (err.response?.data?.details) {
+            error.value = `${t('resetDatabase.resetError')}: ${err.response.data.details}`
+          } else if (err.message) {
+            error.value = `${t('resetDatabase.resetError')}: ${err.message}`
+          } else {
+            error.value = `${t('resetDatabase.resetError')}: ${t('common.unknownError')}`
+          }
+        } finally {
+          loading.value = false
+        }
+      } catch (error) {
+        console.error('Confirmation error:', error)
       }
     }
 
@@ -198,8 +319,41 @@ export default {
       stats,
       success,
       error,
-      resetDatabase
+      resetDatabase,
+      // Confirmations
+      pendingConfirmations,
+      isPageBlocked,
+      confirmAction,
+      handleConfirmation
     }
   }
 }
 </script>
+
+<style scoped>
+/* Confirmation animations */
+.confirmation-enter-active,
+.confirmation-leave-active {
+  transition: all 0.3s ease;
+}
+
+.confirmation-enter-from {
+  opacity: 0;
+  transform: scale(0.9) translateY(-20px);
+}
+
+.confirmation-leave-to {
+  opacity: 0;
+  transform: scale(0.9) translateY(-20px);
+}
+
+.confirmation-move {
+  transition: transform 0.3s ease;
+}
+
+/* Page blocking styles */
+.page-blocked {
+  pointer-events: none;
+  user-select: none;
+}
+</style>

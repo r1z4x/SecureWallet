@@ -4,8 +4,8 @@
       <div class="flex justify-between h-16">
         <div class="flex">
           <div class="flex-shrink-0 flex items-center">
-            <img src="@/assets/logo.svg" alt="Logo" class="h-12 w-auto mr-3">
-            <span class="text-xl font-bold text-gray-900">{{ $t('common.appName') }} <sup class="text-red-500 text-xs">{{ $t('common.vulnerable') }}</sup></span>
+            <img src="@/assets/logo.svg" alt="Logo" class="h-12 w-full max-w-64 mr-3">
+            <sup class="text-red-500 text-xs">{{ $t('common.vulnerable') }}</sup>
           </div>
           
           <div class="hidden sm:ml-6 sm:flex sm:space-x-8">

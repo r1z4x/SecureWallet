@@ -1,6 +1,6 @@
 <template>
   <div class="min-h-screen bg-gray-50">
-    <Navigation />
+    <AppHeader type="authenticated" />
     
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <!-- Admin Access Check -->
@@ -265,7 +265,10 @@
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                       ${{ parseFloat(transaction.amount).toFixed(2) }}
                     </td>
-                    <td class="px-6 py-4 text-sm text-gray-900">{{ transaction.description }}</td>
+                    <td class="px-6 py-4 text-sm text-gray-900">
+                      <!-- VULNERABLE: Stored XSS - description rendered without sanitization for admin exploitation -->
+                      <span v-html="transaction.description || 'No description'"></span>
+                    </td>
                     <td class="px-6 py-4 whitespace-nowrap">
                       <span
                         :class="[
@@ -326,7 +329,7 @@
                 <div class="flex items-start justify-between">
                   <div class="flex-1">
                     <div class="flex items-center space-x-3 mb-2">
-                      <h3 class="text-lg font-medium text-gray-900">#{{ ticket.id }} - {{ ticket.subject }}</h3>
+                      <h3 class="text-lg font-medium text-gray-900">{{ ticket.subject }} <span class="text-sm text-gray-500 font-normal">(#{{ ticket.id.toLowerCase() }})</span></h3>
                       <span
                         :class="[
                           'px-2 py-1 text-xs font-medium rounded-full',
@@ -346,7 +349,7 @@
                     </div>
                     <p class="text-gray-600 mb-3">{{ ticket.message }}</p>
                     <div class="flex items-center space-x-4 text-sm text-gray-500">
-                      <span>{{ $t('admin.userId') }}: {{ ticket.user_id }}</span>
+                      <span>{{ $t('admin.userId') }}: {{ ticket.user?.username || ticket.user_id }} ({{ ticket.user?.email || 'Unknown' }})</span>
                       <span>{{ $t('admin.category') }}: {{ ticket.category }}</span>
                       <span>{{ formatDate(ticket.created_at) }}</span>
                     </div>
@@ -385,28 +388,41 @@
                 <h3 class="text-lg font-medium text-gray-900 mb-4">{{ $t('admin.securitySettings') }}</h3>
                 <div class="space-y-4">
                   <div class="flex items-center justify-between">
-                    <span class="text-sm text-gray-600">{{ $t('admin.twoFactorAuth') }}</span>
-                    <button 
-                      @click="toggleTwoFactor"
-                      :class="[
-                        'px-3 py-1 text-sm rounded-md',
-                        systemSettings.security.twoFactorEnabled 
-                          ? 'bg-red-600 text-white hover:bg-red-700' 
-                          : 'bg-green-600 text-white hover:bg-green-700'
-                      ]"
-                    >
-                      {{ systemSettings.security.twoFactorEnabled ? $t('admin.disable') : $t('admin.enable') }}
-                    </button>
+                    <div class="flex flex-col">
+                      <span class="text-sm font-medium text-gray-700">{{ $t('admin.twoFactorAuth') }}</span>
+                      <span class="text-xs text-gray-500">{{ $t('admin.twoFactorAuthDescription') }}</span>
+                    </div>
+                    <div class="flex items-center">
+                      <span class="text-sm text-gray-600 mr-3">
+                        {{ systemSettings.security.twoFactorEnabled ? $t('admin.enabled') : $t('admin.disabled') }}
+                      </span>
+                      <button
+                        @click="toggleTwoFactor"
+                        :class="[
+                          'relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2',
+                          systemSettings.security.twoFactorEnabled ? 'bg-indigo-600' : 'bg-gray-200'
+                        ]"
+                      >
+                        <span
+                          :class="[
+                            'inline-block h-4 w-4 transform rounded-full bg-white transition-transform',
+                            systemSettings.security.twoFactorEnabled ? 'translate-x-6' : 'translate-x-1'
+                          ]"
+                        />
+                      </button>
+                    </div>
                   </div>
                   <div class="flex items-center justify-between">
                     <span class="text-sm text-gray-600">{{ $t('admin.sessionTimeout') }}</span>
                     <select 
                       v-model="systemSettings.security.sessionTimeout"
-                      class="form-input w-32"
+                      class="form-input w-40"
                     >
-                      <option :value="30">30 min</option>
-                      <option :value="60">1 hour</option>
-                      <option :value="120">2 hours</option>
+                      <option :value="30">{{ $t('admin.sessionTimeout30min') }}</option>
+                      <option :value="60">{{ $t('admin.sessionTimeout1hour') }}</option>
+                      <option :value="120">{{ $t('admin.sessionTimeout2hours') }}</option>
+                      <option :value="1440">{{ $t('admin.sessionTimeout24hours') }}</option>
+                      <option :value="10080">{{ $t('admin.sessionTimeout1week') }}</option>
                     </select>
                   </div>
                   <div class="flex items-center justify-between">
@@ -455,15 +471,11 @@
               </div>
             </div>
             
-            <div class="flex justify-end items-center space-x-4">
+            <div class="flex justify-end items-center">
               <div class="text-sm text-gray-500 italic">
                 <i class="fas fa-info-circle mr-1"></i>
                 {{ $t('admin.autoSaveInfo') }}
               </div>
-              <button @click="saveSettings" class="btn-secondary" title="Manuel kaydetme için">
-                <i class="fas fa-save mr-2"></i>
-                {{ $t('admin.manualSave') }}
-              </button>
             </div>
           </div>
         </div>
@@ -539,6 +551,72 @@
               >
                 <span v-if="addUserLoading">{{ $t('common.processing') }}</span>
                 <span v-else>{{ $t('admin.addUser') }}</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Edit User Modal -->
+    <div
+      v-if="showEditUserModal"
+      class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50"
+      @click="showEditUserModal = false"
+    >
+      <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white" @click.stop>
+        <div class="mt-3">
+          <h3 class="text-lg font-semibold text-gray-900 mb-4">{{ $t('admin.editUser') }}</h3>
+          <form @submit.prevent="submitEditUser" class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('auth.username') }}</label>
+              <input 
+                v-model="editUserData.username"
+                type="text" 
+                class="form-input w-full" 
+                required
+                minlength="3"
+                maxlength="50"
+              />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('auth.email') }}</label>
+              <input 
+                v-model="editUserData.email"
+                type="email" 
+                class="form-input w-full" 
+                required
+              />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('common.role') }}</label>
+              <select v-model="editUserData.is_admin" class="form-input w-full">
+                <option :value="false">{{ $t('admin.user') }}</option>
+                <option :value="true">{{ $t('admin.admin') }}</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('common.status') }}</label>
+              <select v-model="editUserData.is_active" class="form-input w-full">
+                <option :value="true">{{ $t('admin.active') }}</option>
+                <option :value="false">{{ $t('admin.inactive') }}</option>
+              </select>
+            </div>
+            <div class="flex justify-end space-x-3 mt-6">
+              <button 
+                type="button"
+                @click="showEditUserModal = false"
+                class="btn-secondary"
+              >
+                {{ $t('common.cancel') }}
+              </button>
+              <button 
+                type="submit"
+                class="btn-primary"
+                :disabled="editUserLoading"
+              >
+                <span v-if="editUserLoading">{{ $t('common.processing') }}</span>
+                <span v-else>{{ $t('admin.updateUser') }}</span>
               </button>
             </div>
           </form>
@@ -623,6 +701,240 @@
         </div>
       </div>
     </div>
+
+    <!-- Reply to Ticket Modal -->
+    <div
+      v-if="showReplyModal"
+      class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50"
+      @click="showReplyModal = false"
+    >
+      <div class="relative top-20 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white" @click.stop>
+        <div class="mt-3">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-semibold text-gray-900">
+              <i class="fas fa-reply mr-2 text-blue-600"></i>
+              {{ $t('admin.reply') }} - {{ selectedTicket?.subject }} <span class="text-sm text-gray-500 font-normal">(#{{ selectedTicket?.id?.toLowerCase() }})</span>
+            </h3>
+            <button 
+              @click="showReplyModal = false"
+              class="text-gray-400 hover:text-gray-600"
+            >
+              <i class="fas fa-times text-xl"></i>
+            </button>
+          </div>
+          
+          <!-- Ticket Info -->
+          <div class="bg-gray-50 rounded-lg p-4 mb-4">
+            <div class="flex items-center space-x-4 text-sm text-gray-600 mb-2">
+              <span><strong>{{ $t('admin.userId') }}:</strong> {{ selectedTicket?.user?.username || selectedTicket?.user_id }} ({{ selectedTicket?.user?.email || 'Unknown' }})</span>
+              <span><strong>{{ $t('admin.priority') }}:</strong> 
+                <span :class="getTicketPriorityColor(selectedTicket?.priority)" class="px-2 py-1 text-xs font-medium rounded-full ml-1">
+                  {{ selectedTicket?.priority }}
+                </span>
+              </span>
+              <span><strong>{{ $t('admin.status') }}:</strong> 
+                <span :class="getTicketStatusColor(selectedTicket?.status)" class="px-2 py-1 text-xs font-medium rounded-full ml-1">
+                  {{ selectedTicket?.status }}
+                </span>
+              </span>
+            </div>
+            <div class="text-sm text-gray-700">
+              <strong>{{ $t('admin.originalMessage') }}:</strong>
+              <p class="mt-1 p-2 bg-white rounded border">{{ selectedTicket?.message }}</p>
+            </div>
+          </div>
+
+          <!-- Reply Form -->
+          <form @submit.prevent="submitReply" class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">
+                {{ $t('admin.replyMessage') }}
+              </label>
+              <textarea 
+                v-model="replyMessage"
+                class="form-input w-full h-32 resize-none" 
+                :placeholder="$t('admin.replyPlaceholder')"
+                required
+                maxlength="1000"
+              ></textarea>
+              <div class="text-right text-xs text-gray-500 mt-1">
+                {{ replyMessage.length }}/1000
+              </div>
+            </div>
+            
+            <div class="flex justify-end space-x-3 mt-6">
+              <button 
+                type="button"
+                @click="showReplyModal = false"
+                class="btn-secondary"
+              >
+                {{ $t('common.cancel') }}
+              </button>
+              <button 
+                type="submit"
+                class="btn-primary"
+                :disabled="replyLoading || !replyMessage.trim()"
+              >
+                <span v-if="replyLoading">
+                  <i class="fas fa-spinner fa-spin mr-2"></i>
+                  {{ $t('common.sending') }}
+                </span>
+                <span v-else>
+                  <i class="fas fa-paper-plane mr-2"></i>
+                  {{ $t('admin.sendReply') }}
+                </span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Enhanced Notification Container -->
+    <div class="notification-container">
+      <!-- Clear All Button (only show if there are notifications) -->
+      <div v-if="notifications.length > 1" class="mb-2">
+        <button
+          @click="clearAllNotifications"
+          class="text-xs text-gray-500 hover:text-gray-700 bg-white px-2 py-1 rounded shadow-sm border"
+          :title="$t('admin.clearAllNotifications')"
+        >
+          <i class="fas fa-times mr-1"></i>
+          {{ $t('admin.clearAll') }}
+        </button>
+      </div>
+      
+      <transition-group name="notification" tag="div">
+        <div
+          v-for="notification in notifications"
+          :key="notification.id"
+          :class="[
+            'notification-item w-full bg-white shadow-lg rounded-lg ring-1 ring-black ring-opacity-5 overflow-hidden',
+            {
+              'border-l-4 border-green-400': notification.type === 'success',
+              'border-l-4 border-red-400': notification.type === 'error',
+              'border-l-4 border-yellow-400': notification.type === 'warning',
+              'border-l-4 border-blue-400': notification.type === 'info'
+            }
+          ]"
+        >
+          <div class="p-4">
+            <div class="flex items-start">
+              <div class="flex-shrink-0">
+                <i 
+                  :class="[
+                    'h-5 w-5',
+                    {
+                      'fas fa-check-circle text-green-400': notification.type === 'success',
+                      'fas fa-exclamation-circle text-red-400': notification.type === 'error',
+                      'fas fa-exclamation-triangle text-yellow-400': notification.type === 'warning',
+                      'fas fa-info-circle text-blue-400': notification.type === 'info'
+                    }
+                  ]"
+                ></i>
+              </div>
+              <div class="ml-3 w-0 flex-1 pt-0.5">
+                <p class="text-sm font-medium text-gray-900 break-words">
+                  {{ notification.message }}
+                </p>
+                <!-- Show timestamp for debugging -->
+                <p v-if="notification.persistent" class="text-xs text-gray-500 mt-1">
+                  {{ $t('admin.persistentNotification') }}
+                </p>
+              </div>
+              <div class="ml-4 flex-shrink-0 flex items-start space-x-1">
+                <!-- Action buttons if any -->
+                <div v-if="notification.actions && notification.actions.length > 0" class="flex space-x-1">
+                  <button
+                    v-for="action in notification.actions"
+                    :key="action.label"
+                    @click="action.handler"
+                    class="text-xs px-2 py-1 rounded text-white"
+                    :class="action.class || 'bg-blue-500 hover:bg-blue-600'"
+                  >
+                    {{ action.label }}
+                  </button>
+                </div>
+                <!-- Close button -->
+                <button
+                  @click="removeNotification(notification.id)"
+                  class="bg-white rounded-md inline-flex text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                  :title="$t('admin.closeNotification')"
+                >
+                  <span class="sr-only">{{ $t('admin.close') }}</span>
+                  <i class="fas fa-times h-5 w-5"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </transition-group>
+      
+      <!-- Queue indicator -->
+      <div v-if="notificationQueue.length > 0" class="mt-2 text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+        <i class="fas fa-clock mr-1"></i>
+        {{ $t('admin.notificationsInQueue', { count: notificationQueue.length }) }}
+      </div>
+    </div>
+
+    <!-- Confirmation Overlay -->
+    <div v-if="isPageBlocked" class="fixed inset-0 bg-black bg-opacity-50 z-[10000] flex items-center justify-center">
+      <transition-group name="confirmation" tag="div" class="space-y-4">
+        <div
+          v-for="confirmation in pendingConfirmations"
+          :key="confirmation.id"
+          class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6"
+        >
+          <div class="flex items-center mb-4">
+            <div class="flex-shrink-0">
+              <i 
+                :class="[
+                  'h-6 w-6',
+                  {
+                    'fas fa-exclamation-triangle text-yellow-500': confirmation.type === 'warning',
+                    'fas fa-exclamation-circle text-red-500': confirmation.type === 'error',
+                    'fas fa-question-circle text-blue-500': confirmation.type === 'info',
+                    'fas fa-check-circle text-green-500': confirmation.type === 'success'
+                  }
+                ]"
+              ></i>
+            </div>
+            <div class="ml-3">
+              <h3 class="text-lg font-medium text-gray-900">
+                {{ confirmation.title }}
+              </h3>
+            </div>
+          </div>
+          
+          <div class="mb-6">
+            <p class="text-sm text-gray-600 break-words">
+              {{ confirmation.message }}
+            </p>
+          </div>
+          
+          <div class="flex justify-end space-x-3">
+            <button
+              @click="handleConfirmation(confirmation.id, false)"
+              :class="[
+                'px-4 py-2 text-sm font-medium rounded-md text-white focus:outline-none focus:ring-2 focus:ring-offset-2',
+                confirmation.cancelClass
+              ]"
+            >
+              {{ confirmation.cancelText }}
+            </button>
+            <button
+              @click="handleConfirmation(confirmation.id, true)"
+              :class="[
+                'px-4 py-2 text-sm font-medium rounded-md text-white focus:outline-none focus:ring-2 focus:ring-offset-2',
+                confirmation.confirmClass
+              ]"
+            >
+              {{ confirmation.confirmText }}
+            </button>
+          </div>
+        </div>
+      </transition-group>
+    </div>
   </div>
 </template>
 
@@ -630,7 +942,7 @@
 import { ref, onMounted, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/auth'
-import Navigation from '@/components/Navigation.vue'
+import AppHeader from '@/components/AppHeader.vue'
 import Pagination from '@/components/Pagination.vue'
 import { userService } from '@/services/user'
 import { transactionService } from '@/services/transaction'
@@ -640,7 +952,7 @@ import { adminService } from '@/services/admin'
 export default {
   name: 'Admin',
   components: {
-    Navigation,
+    AppHeader,
     Pagination
   },
   setup() {
@@ -686,9 +998,48 @@ export default {
       }
     })
 
+    // Load settings from localStorage on component mount
+    const loadSettingsFromStorage = () => {
+      try {
+        const savedSettings = localStorage.getItem('adminSystemSettings')
+        if (savedSettings) {
+          const parsedSettings = JSON.parse(savedSettings)
+          systemSettings.value = { ...systemSettings.value, ...parsedSettings }
+        }
+      } catch (error) {
+        console.warn('Error loading settings from localStorage:', error)
+      }
+    }
+
+    // Save settings to localStorage
+    const saveSettingsToStorage = (settings) => {
+      try {
+        localStorage.setItem('adminSystemSettings', JSON.stringify(settings))
+      } catch (error) {
+        console.warn('Error saving settings to localStorage:', error)
+      }
+    }
+
     // Modal states
     const showPasswordPolicyModal = ref(false)
     const showAddUserModal = ref(false)
+    const showEditUserModal = ref(false)
+    const showReplyModal = ref(false)
+    const selectedTicket = ref(null)
+    const replyMessage = ref('')
+    const replyLoading = ref(false)
+    
+    // Notification states
+    const notifications = ref([])
+    const notificationId = ref(0)
+    const notificationQueue = ref([])
+    const maxNotifications = 5
+    const notificationTimeouts = ref(new Map())
+    
+    // Confirmation states
+    const pendingConfirmations = ref([])
+    const confirmationId = ref(0)
+    const isPageBlocked = ref(false)
     
     // Auto-save timeout
     const autoSaveTimeout = ref(null)
@@ -702,6 +1053,15 @@ export default {
       is_active: true
     })
     const addUserLoading = ref(false)
+    const editUserLoading = ref(false)
+    const selectedUser = ref(null)
+    const editUserData = ref({
+      id: '',
+      username: '',
+      email: '',
+      is_admin: false,
+      is_active: true
+    })
 
     // Pagination states
     const currentPage = ref(1)
@@ -845,7 +1205,8 @@ export default {
 
     const loadTickets = async () => {
       try {
-        const response = await supportService.getTickets()
+        // Use admin service to get ALL support tickets from the system
+        const response = await adminService.getAdminSupportTickets()
         tickets.value = response || []
         stats.value.totalTickets = tickets.value.length
         
@@ -856,34 +1217,49 @@ export default {
         if (tickets.value.length === 0) {
           tickets.value = [
             {
-              id: 1,
+              id: '550e8400-e29b-41d4-a716-446655440001',
               subject: 'Login issue',
               message: 'I cannot login to my account',
               status: 'open',
               priority: 'high',
-              user_id: 2,
+              user_id: '550e8400-e29b-41d4-a716-446655440002',
               category: 'Authentication',
-              created_at: new Date().toISOString()
+              created_at: new Date().toISOString(),
+              user: {
+                id: '550e8400-e29b-41d4-a716-446655440002',
+                username: 'testuser',
+                email: 'test@example.com'
+              }
             },
             {
-              id: 2,
+              id: '550e8400-e29b-41d4-a716-446655440003',
               subject: 'Transfer problem',
               message: 'My transfer is stuck',
               status: 'in_progress',
               priority: 'medium',
-              user_id: 3,
+              user_id: '550e8400-e29b-41d4-a716-446655440004',
               category: 'Transactions',
-              created_at: new Date(Date.now() - 86400000).toISOString()
+              created_at: new Date(Date.now() - 86400000).toISOString(),
+              user: {
+                id: '550e8400-e29b-41d4-a716-446655440004',
+                username: 'user2',
+                email: 'user2@example.com'
+              }
             },
             {
-              id: 3,
+              id: '550e8400-e29b-41d4-a716-446655440005',
               subject: 'Password reset',
               message: 'Need help with password reset',
               status: 'resolved',
               priority: 'low',
-              user_id: 1,
+              user_id: '550e8400-e29b-41d4-a716-446655440006',
               category: 'Account',
-              created_at: new Date(Date.now() - 172800000).toISOString()
+              created_at: new Date(Date.now() - 172800000).toISOString(),
+              user: {
+                id: '550e8400-e29b-41d4-a716-446655440006',
+                username: 'admin',
+                email: 'admin@example.com'
+              }
             }
           ]
           stats.value.totalTickets = tickets.value.length
@@ -893,14 +1269,19 @@ export default {
         // Add mock data on error
         tickets.value = [
           {
-            id: 1,
+            id: '550e8400-e29b-41d4-a716-446655440007',
             subject: 'Test ticket',
             message: 'This is a test support ticket',
             status: 'open',
             priority: 'medium',
-            user_id: 1,
+            user_id: '550e8400-e29b-41d4-a716-446655440008',
             category: 'General',
-            created_at: new Date().toISOString()
+            created_at: new Date().toISOString(),
+            user: {
+              id: '550e8400-e29b-41d4-a716-446655440008',
+              username: 'testuser',
+              email: 'test@example.com'
+            }
           }
         ]
         stats.value.totalTickets = tickets.value.length
@@ -915,7 +1296,7 @@ export default {
           loadTickets()
         ])
         
-        // Load system settings
+        // Load system settings from backend first
         try {
           const settingsResponse = await adminService.getSystemSettings()
           if (settingsResponse) {
@@ -927,6 +1308,9 @@ export default {
         } catch (settingsError) {
           console.warn('Could not load system settings:', settingsError)
         }
+        
+        // Then load from localStorage to override backend values with user's local changes
+        loadSettingsFromStorage()
       } catch (error) {
         console.error('Error loading data:', error)
       }
@@ -941,14 +1325,22 @@ export default {
 
     // Watch for system settings changes and auto-save
     watch(systemSettings, async (newSettings, oldSettings) => {
-      // Skip the first call (initial load)
+      // Skip the first call (initial load) and 2FA changes (handled manually)
       if (oldSettings && Object.keys(oldSettings).length > 0) {
         try {
           // Debounce the save operation to avoid too many API calls
           clearTimeout(autoSaveTimeout.value)
           autoSaveTimeout.value = setTimeout(async () => {
-            await adminService.saveSystemSettings(newSettings)
-            console.log('Settings auto-saved successfully')
+            // Save to localStorage for persistence
+            saveSettingsToStorage(newSettings)
+            
+            // Also try to save to backend (optional)
+            try {
+              await adminService.saveSystemSettings(newSettings)
+              console.log('Settings auto-saved successfully')
+            } catch (error) {
+              console.warn('Backend auto-save failed, but settings saved locally:', error)
+            }
           }, 1000) // Wait 1 second after last change
         } catch (error) {
           console.warn('Auto-save failed:', error)
@@ -1032,6 +1424,179 @@ export default {
       }
     }
 
+    // Advanced Notification System
+    const addNotification = (type, message, duration = 5000, options = {}) => {
+      try {
+        // Validate inputs
+        if (!type || !message) {
+          console.error('Invalid notification parameters:', { type, message })
+          return null
+        }
+
+        const validTypes = ['success', 'error', 'warning', 'info']
+        if (!validTypes.includes(type)) {
+          console.error('Invalid notification type:', type)
+          return null
+        }
+
+        const id = ++notificationId.value
+        const notification = {
+          id,
+          type,
+          message: String(message), // Ensure message is string
+          duration: Math.max(2000, Math.min(10000, duration)), // Clamp between 2-10 seconds
+          timestamp: Date.now(),
+          persistent: options.persistent || false,
+          actions: options.actions || []
+        }
+        
+        // Check if we're at max capacity
+        if (notifications.value.length >= maxNotifications) {
+          // Remove oldest notification
+          const oldest = notifications.value[0]
+          removeNotification(oldest.id)
+        }
+        
+        // Add to notifications
+        notifications.value.push(notification)
+        
+        // Set auto-remove timeout (only if not persistent)
+        if (!notification.persistent) {
+          const timeoutId = setTimeout(() => {
+            removeNotification(id)
+          }, notification.duration)
+          
+          notificationTimeouts.value.set(id, timeoutId)
+        }
+        
+        return id
+      } catch (error) {
+        console.error('Error adding notification:', error)
+        return null
+      }
+    }
+
+    const removeNotification = (id) => {
+      try {
+        // Clear timeout if exists
+        const timeoutId = notificationTimeouts.value.get(id)
+        if (timeoutId) {
+          clearTimeout(timeoutId)
+          notificationTimeouts.value.delete(id)
+        }
+        
+        // Remove from notifications array
+        const index = notifications.value.findIndex(n => n.id === id)
+        if (index > -1) {
+          notifications.value.splice(index, 1)
+        }
+        
+        // Process queue if there are pending notifications
+        processNotificationQueue()
+      } catch (error) {
+        console.error('Error removing notification:', error)
+      }
+    }
+
+    const processNotificationQueue = () => {
+      if (notificationQueue.value.length > 0 && notifications.value.length < maxNotifications) {
+        const queuedNotification = notificationQueue.value.shift()
+        addNotification(
+          queuedNotification.type,
+          queuedNotification.message,
+          queuedNotification.duration,
+          queuedNotification.options
+        )
+      }
+    }
+
+    const queueNotification = (type, message, duration = 5000, options = {}) => {
+      notificationQueue.value.push({ type, message, duration, options })
+      processNotificationQueue()
+    }
+
+    const clearAllNotifications = () => {
+      try {
+        // Clear all timeouts
+        notificationTimeouts.value.forEach(timeoutId => clearTimeout(timeoutId))
+        notificationTimeouts.value.clear()
+        
+        // Clear notifications and queue
+        notifications.value = []
+        notificationQueue.value = []
+      } catch (error) {
+        console.error('Error clearing notifications:', error)
+      }
+    }
+
+    // Enhanced notification functions with error handling
+    const showSuccess = (message, duration = 5000, options = {}) => {
+      return addNotification('success', message, duration, options)
+    }
+    
+    const showError = (message, duration = 7000, options = {}) => {
+      return addNotification('error', message, duration, { ...options, persistent: true })
+    }
+    
+    const showWarning = (message, duration = 6000, options = {}) => {
+      return addNotification('warning', message, duration, options)
+    }
+    
+    const showInfo = (message, duration = 5000, options = {}) => {
+      return addNotification('info', message, duration, options)
+    }
+
+    // Queue-based notification functions for high-frequency scenarios
+    const queueSuccess = (message, duration = 5000, options = {}) => {
+      queueNotification('success', message, duration, options)
+    }
+    
+    const queueError = (message, duration = 7000, options = {}) => {
+      queueNotification('error', message, duration, { ...options, persistent: true })
+    }
+
+    // Confirmation System
+    const showConfirmation = (message, options = {}) => {
+      return new Promise((resolve) => {
+        const id = ++confirmationId.value
+        const confirmation = {
+          id,
+          message: String(message),
+          type: options.type || 'warning',
+          title: options.title || t('admin.confirmation'),
+          confirmText: options.confirmText || t('admin.yes'),
+          cancelText: options.cancelText || t('admin.no'),
+          confirmClass: options.confirmClass || 'bg-red-500 hover:bg-red-600',
+          cancelClass: options.cancelClass || 'bg-gray-500 hover:bg-gray-600',
+          timestamp: Date.now(),
+          resolve
+        }
+        
+        pendingConfirmations.value.push(confirmation)
+        isPageBlocked.value = true
+        
+        return confirmation
+      })
+    }
+
+    const handleConfirmation = (id, confirmed) => {
+      const index = pendingConfirmations.value.findIndex(c => c.id === id)
+      if (index > -1) {
+        const confirmation = pendingConfirmations.value[index]
+        confirmation.resolve(confirmed)
+        pendingConfirmations.value.splice(index, 1)
+        
+        // Unblock page if no more confirmations
+        if (pendingConfirmations.value.length === 0) {
+          isPageBlocked.value = false
+        }
+      }
+    }
+
+    const confirmAction = (message, options = {}) => {
+      return showConfirmation(message, options)
+    }
+
     const addUser = () => {
       showAddUserModal.value = true
       // Reset form
@@ -1053,7 +1618,7 @@ export default {
         await userService.createUser(newUser.value)
         
         // Show success message
-        alert('User added successfully!')
+        showSuccess(t('admin.userAddedSuccessfully'))
 
         
         // Close modal and reload users
@@ -1079,45 +1644,139 @@ export default {
           errorMessage = error.message
         }
         
-        alert(errorMessage)
+        showError(errorMessage)
       } finally {
         addUserLoading.value = false
       }
     }
 
     const editUser = (userId) => {
-      // TODO: Implement edit user functionality
-      
+      const user = users.value.find(u => u.id === userId)
+      if (user) {
+        selectedUser.value = user
+        editUserData.value = {
+          id: user.id,
+          username: user.username,
+          email: user.email,
+          is_admin: user.is_admin || false,
+          is_active: user.is_active !== false
+        }
+        showEditUserModal.value = true
+      }
+    }
+
+    const submitEditUser = async () => {
+      try {
+        editUserLoading.value = true
+
+        // Call API to update user
+        await userService.updateUser(editUserData.value.id, editUserData.value)
+        
+        // Show success message
+        showSuccess(t('admin.userUpdatedSuccessfully'))
+
+        // Close modal and reload users
+        showEditUserModal.value = false
+        await loadUsers()
+        
+        // Reset form
+        editUserData.value = {
+          id: '',
+          username: '',
+          email: '',
+          is_admin: false,
+          is_active: true
+        }
+        selectedUser.value = null
+        
+      } catch (error) {
+        console.error('Error updating user:', error)
+        let errorMessage = t('admin.errorUpdatingUser')
+        if (error.response?.data?.error) {
+          errorMessage += ': ' + error.response.data.error
+        } else if (error.message) {
+          errorMessage += ': ' + error.message
+        }
+        
+        showError(errorMessage)
+      } finally {
+        editUserLoading.value = false
+      }
     }
 
     const deleteUser = async (userId) => {
-      if (confirm(t('admin.confirmDeleteUser'))) {
-        try {
-          // TODO: Implement delete user API call
-  
-          await loadUsers() // Reload users after deletion
-        } catch (error) {
-          console.error('Error deleting user:', error)
-        }
-      }
-    }
-
-    const saveSettings = async () => {
       try {
-        // Call API to save settings
-        await adminService.saveSystemSettings(systemSettings.value)
+        const confirmed = await confirmAction(t('admin.confirmDeleteUser'), {
+          type: 'error',
+          title: t('admin.deleteUser'),
+          confirmText: t('admin.delete'),
+          cancelText: t('common.cancel'),
+          confirmClass: 'bg-red-500 hover:bg-red-600',
+          cancelClass: 'bg-gray-500 hover:bg-gray-600'
+        })
         
-        // Show success message
-        alert('Settings saved successfully!')
-
+        if (confirmed) {
+          // Call API to delete user
+          await userService.deleteUser(userId)
+          showSuccess(t('admin.userDeletedSuccessfully'))
+          await loadUsers() // Reload users after deletion
+        }
       } catch (error) {
-        console.error('Error saving settings:', error)
-        alert('Error saving settings: ' + error.message)
+        console.error('Error deleting user:', error)
+        showError(t('admin.errorDeletingUser'))
       }
     }
 
-    const toggleTwoFactor = () => {
-      systemSettings.value.security.twoFactorEnabled = !systemSettings.value.security.twoFactorEnabled
+
+    const toggleTwoFactor = async () => {
+      try {
+        const currentState = systemSettings.value.security.twoFactorEnabled
+        const newState = !currentState
+        
+        const confirmed = await confirmAction(
+          currentState 
+            ? t('admin.confirmDisableTwoFactor') 
+            : t('admin.confirmEnableTwoFactor'),
+          {
+            type: currentState ? 'warning' : 'info',
+            title: currentState ? t('admin.disableTwoFactor') : t('admin.enableTwoFactor'),
+            confirmText: currentState ? t('admin.disable') : t('admin.enable'),
+            cancelText: t('common.cancel'),
+            confirmClass: currentState 
+              ? 'bg-red-500 hover:bg-red-600' 
+              : 'bg-green-500 hover:bg-green-600',
+            cancelClass: 'bg-gray-500 hover:bg-gray-600'
+          }
+        )
+        
+        if (confirmed) {
+          systemSettings.value.security.twoFactorEnabled = newState
+          
+          // Save to localStorage for persistence
+          saveSettingsToStorage(systemSettings.value)
+          
+          // Also try to save to backend (optional)
+          try {
+            await adminService.saveSystemSettings(systemSettings.value)
+            showSuccess(
+              newState 
+                ? t('admin.twoFactorEnabledSuccessfully') 
+                : t('admin.twoFactorDisabledSuccessfully')
+            )
+          } catch (saveError) {
+            console.warn('Backend save failed, but setting saved locally:', saveError)
+            // Still show success since localStorage save worked
+            showSuccess(
+              newState 
+                ? t('admin.twoFactorEnabledSuccessfully') 
+                : t('admin.twoFactorDisabledSuccessfully')
+            )
+          }
+        }
+      } catch (error) {
+        console.error('Error toggling two-factor authentication:', error)
+        showError(t('admin.errorTogglingTwoFactor'))
+      }
     }
 
     const savePasswordPolicy = () => {
@@ -1172,15 +1831,77 @@ export default {
     }
 
     const replyToTicket = (ticketId) => {
-      // TODO: Implement reply to ticket functionality
+      // Find the ticket to reply to
+      const ticket = tickets.value.find(t => t.id == ticketId)
+      if (!ticket) {
+        alert('Ticket not found')
+        return
+      }
+      
+      // Set selected ticket and reset form
+      selectedTicket.value = ticket
+      replyMessage.value = ''
+      showReplyModal.value = true
+    }
+
+    const submitReply = async () => {
+      if (!replyMessage.value.trim()) {
+        return
+      }
+
+      try {
+        replyLoading.value = true
+        const response = await adminService.replyToTicket(selectedTicket.value.id, replyMessage.value.trim())
+        
+        // Update ticket status in local data if it's a mock ticket
+        const ticketIndex = tickets.value.findIndex(t => t.id === selectedTicket.value.id)
+        if (ticketIndex !== -1 && response.status === 'in_progress') {
+          tickets.value[ticketIndex].status = 'in_progress'
+        }
+        
+        // Close modal and reload tickets
+        showReplyModal.value = false
+        selectedTicket.value = null
+        replyMessage.value = ''
+        
+        showSuccess(t('admin.replySentSuccessfully'))
+        await loadTickets() // Reload tickets after reply
+      } catch (error) {
+        console.error('Error replying to ticket:', error)
+        showError(t('admin.errorSendingReply') + ': ' + (error.response?.data?.error || error.message))
+      } finally {
+        replyLoading.value = false
+      }
     }
 
     const resolveTicket = async (ticketId) => {
       try {
-        // TODO: Implement resolve ticket API call
+        const confirmed = await confirmAction(t('admin.confirmResolveTicket'), {
+          type: 'warning',
+          title: t('admin.resolveTicket'),
+          confirmText: t('admin.resolve'),
+          cancelText: t('common.cancel'),
+          confirmClass: 'bg-green-500 hover:bg-green-600',
+          cancelClass: 'bg-gray-500 hover:bg-gray-600'
+        })
+        
+        if (!confirmed) {
+          return
+        }
+
+        const response = await adminService.resolveTicket(ticketId)
+        
+        // Update ticket status in local data if it's a mock ticket
+        const ticketIndex = tickets.value.findIndex(t => t.id == ticketId)
+        if (ticketIndex !== -1 && response.status === 'resolved') {
+          tickets.value[ticketIndex].status = 'resolved'
+        }
+        
+        showSuccess(t('admin.ticketResolvedSuccessfully'))
         await loadTickets() // Reload tickets after resolution
       } catch (error) {
         console.error('Error resolving ticket:', error)
+        showError(t('admin.errorResolvingTicket') + ': ' + (error.response?.data?.error || error.message))
       }
     }
 
@@ -1208,7 +1929,6 @@ export default {
       addUser,
       editUser,
       deleteUser,
-      saveSettings,
       exportTransactions,
       replyToTicket,
       resolveTicket,
@@ -1216,6 +1936,8 @@ export default {
       savePasswordPolicy,
       systemSettings,
       showPasswordPolicyModal,
+      loadSettingsFromStorage,
+      saveSettingsToStorage,
       // Pagination
       currentPage,
       itemsPerPage,
@@ -1231,12 +1953,110 @@ export default {
       addUserLoading,
       showAddUserModal,
       submitAddUser,
+      editUser,
+      editUserData,
+      editUserLoading,
+      showEditUserModal,
+      submitEditUser,
+      selectedUser,
       // Filtered data
       filteredTransactions,
       filteredTickets,
       // Auto-save
-      autoSaveTimeout
+      autoSaveTimeout,
+      // Reply modal
+      showReplyModal,
+      selectedTicket,
+      replyMessage,
+      replyLoading,
+      submitReply,
+      // Notifications
+      notifications,
+      notificationQueue,
+      removeNotification,
+      clearAllNotifications,
+      showSuccess,
+      showError,
+      showWarning,
+      showInfo,
+      queueSuccess,
+      queueError,
+      // Confirmations
+      pendingConfirmations,
+      isPageBlocked,
+      confirmAction,
+      handleConfirmation
     }
   }
 }
 </script>
+
+<style scoped>
+.notification-enter-active,
+.notification-leave-active {
+  transition: all 0.3s ease;
+}
+
+.notification-enter-from {
+  opacity: 0;
+  transform: translateX(100%);
+}
+
+.notification-leave-to {
+  opacity: 0;
+  transform: translateX(100%);
+}
+
+.notification-move {
+  transition: transform 0.3s ease;
+}
+
+/* Ensure notifications are fully visible */
+.notification-container {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 9999;
+  pointer-events: none;
+  max-width: 24rem;
+  width: 100%;
+}
+
+@media (min-width: 640px) {
+  .notification-container {
+    max-width: 28rem;
+  }
+}
+
+/* Ensure notification content is fully visible */
+.notification-item {
+  pointer-events: auto;
+  margin-bottom: 0.5rem;
+}
+
+/* Confirmation animations */
+.confirmation-enter-active,
+.confirmation-leave-active {
+  transition: all 0.3s ease;
+}
+
+.confirmation-enter-from {
+  opacity: 0;
+  transform: scale(0.9) translateY(-20px);
+}
+
+.confirmation-leave-to {
+  opacity: 0;
+  transform: scale(0.9) translateY(-20px);
+}
+
+.confirmation-move {
+  transition: transform 0.3s ease;
+}
+
+/* Page blocking styles */
+.page-blocked {
+  pointer-events: none;
+  user-select: none;
+}
+</style>

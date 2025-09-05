@@ -1,6 +1,6 @@
 <template>
   <div class="min-h-screen bg-gray-50">
-    <Navigation />
+    <AppHeader type="authenticated" />
     
     <div class="container mx-auto px-4 py-8">
       <!-- Header -->
@@ -27,7 +27,7 @@
         </div>
       </div>
 
-      <!-- Quick Navigation -->
+      <!-- Quick AppHeader -->
       <div class="flex flex-wrap justify-center gap-4 mb-8">
         <button
           v-for="category in categories"
@@ -116,12 +116,12 @@
 
 <script>
 import { ref, computed, onMounted } from 'vue'
-import Navigation from '@/components/Navigation.vue'
+import AppHeader from '@/components/AppHeader.vue'
 
 export default {
   name: 'FAQ',
   components: {
-    Navigation
+    AppHeader
   },
   setup() {
     const searchQuery = ref('')
