@@ -158,7 +158,10 @@
                   <h3 class="text-lg font-medium text-red-900">Delete Account</h3>
                   <p class="text-sm text-red-600">Permanently delete your account and all data</p>
                 </div>
-                <button @click="showDeleteAccount = true" class="btn-danger">
+                <button 
+                  @click="showDeleteAccount = true" 
+                  class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-200"
+                >
                   <i class="fas fa-trash mr-2"></i>
                   Delete Account
                 </button>
@@ -170,7 +173,10 @@
                   <h3 class="text-lg font-medium text-orange-900">Reset Database</h3>
                   <p class="text-sm text-orange-600">Reset and recreate database with sample data</p>
                 </div>
-                <router-link to="/reset-database" class="btn-danger">
+                <router-link 
+                  to="/reset-database" 
+                  class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-colors duration-200"
+                >
                   <i class="fas fa-database mr-2"></i>
                   Reset Database
                 </router-link>

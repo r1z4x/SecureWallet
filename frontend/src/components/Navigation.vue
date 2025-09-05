@@ -47,15 +47,6 @@
             
 
             
-            <router-link
-              v-if="isAdmin"
-              to="/admin"
-              class="nav-link"
-              :class="{ 'active': $route.path === '/admin' }"
-            >
-              <i class="fas fa-shield-alt mr-2"></i>
-              {{ $t('nav.admin') }}
-            </router-link>
             
 
           </div>
@@ -138,6 +129,16 @@
                   </router-link>
                   
                   <router-link
+                    v-if="isAdmin"
+                    to="/admin"
+                    class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    @click="userDropdownOpen = false"
+                  >
+                    <i class="fas fa-shield-alt mr-3"></i>
+                    {{ $t('nav.admin') }}
+                  </router-link>
+                  
+                  <router-link
                     to="/support"
                     class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                     @click="userDropdownOpen = false"
@@ -202,6 +203,16 @@
             </router-link>
             
             <router-link
+              v-if="isAdmin"
+              to="/admin"
+              class="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md"
+              @click="mobileMenuOpen = false; userDropdownOpen = false"
+            >
+              <i class="fas fa-shield-alt mr-2"></i>
+              {{ $t('nav.admin') }}
+            </router-link>
+            
+            <router-link
               to="/support"
               class="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md"
               @click="mobileMenuOpen = false; userDropdownOpen = false"
@@ -257,15 +268,6 @@
         
 
         
-        <router-link
-          v-if="isAdmin"
-          to="/admin"
-          class="mobile-nav-link"
-          :class="{ 'active': $route.path === '/admin' }"
-        >
-          <i class="fas fa-shield-alt mr-2"></i>
-          {{ $t('nav.admin') }}
-        </router-link>
         
 
       </div>

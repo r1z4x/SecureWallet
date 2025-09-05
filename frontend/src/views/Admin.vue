@@ -120,7 +120,10 @@
                   </select>
                   <span class="text-sm text-gray-700">{{ $t('common.results') }}</span>
                 </div>
-                <button @click="addUser" class="btn-primary">
+                <button 
+                  @click="addUser" 
+                  class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors duration-200"
+                >
                   <i class="fas fa-plus mr-2"></i>
                   {{ $t('admin.addUser') }}
                 </button>
@@ -178,8 +181,22 @@
                       {{ user.created_at ? formatDate(user.created_at) : 'Unknown' }}
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <button @click="editUser(user.id)" class="text-primary-600 hover:text-primary-900 mr-3">{{ $t('common.edit') }}</button>
-                      <button @click="deleteUser(user.id)" class="text-red-600 hover:text-red-900">{{ $t('common.delete') }}</button>
+                      <div class="flex space-x-2">
+                        <button 
+                          @click="editUser(user.id)" 
+                          class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
+                        >
+                          <i class="fas fa-edit mr-1"></i>
+                          {{ $t('common.edit') }}
+                        </button>
+                        <button 
+                          @click="deleteUser(user.id)" 
+                          class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-200"
+                        >
+                          <i class="fas fa-trash mr-1"></i>
+                          {{ $t('common.delete') }}
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 </tbody>
@@ -355,14 +372,22 @@
                     </div>
                   </div>
                   <div class="ml-4">
-                    <button @click="replyToTicket(ticket.id)" class="btn-secondary mr-2">
-                      <i class="fas fa-reply mr-2"></i>
-                      {{ $t('admin.reply') }}
-                    </button>
-                    <button @click="resolveTicket(ticket.id)" class="btn-primary">
-                      <i class="fas fa-check mr-2"></i>
-                      {{ $t('admin.resolve') }}
-                    </button>
+                    <div class="flex space-x-2">
+                      <button 
+                        @click="replyToTicket(ticket.id)" 
+                        class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
+                      >
+                        <i class="fas fa-reply mr-1"></i>
+                        {{ $t('admin.reply') }}
+                      </button>
+                      <button 
+                        @click="resolveTicket(ticket.id)" 
+                        class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors duration-200"
+                      >
+                        <i class="fas fa-check mr-1"></i>
+                        {{ $t('admin.resolve') }}
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -540,17 +565,24 @@
               <button 
                 type="button"
                 @click="showAddUserModal = false"
-                class="btn-secondary"
+                class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200"
               >
+                <i class="fas fa-times mr-2"></i>
                 {{ $t('common.cancel') }}
               </button>
               <button 
                 type="submit"
-                class="btn-primary"
+                class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
                 :disabled="addUserLoading"
               >
-                <span v-if="addUserLoading">{{ $t('common.processing') }}</span>
-                <span v-else>{{ $t('admin.addUser') }}</span>
+                <span v-if="addUserLoading">
+                  <i class="fas fa-spinner fa-spin mr-2"></i>
+                  {{ $t('common.processing') }}
+                </span>
+                <span v-else>
+                  <i class="fas fa-plus mr-2"></i>
+                  {{ $t('admin.addUser') }}
+                </span>
               </button>
             </div>
           </form>
@@ -606,17 +638,24 @@
               <button 
                 type="button"
                 @click="showEditUserModal = false"
-                class="btn-secondary"
+                class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200"
               >
+                <i class="fas fa-times mr-2"></i>
                 {{ $t('common.cancel') }}
               </button>
               <button 
                 type="submit"
-                class="btn-primary"
+                class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
                 :disabled="editUserLoading"
               >
-                <span v-if="editUserLoading">{{ $t('common.processing') }}</span>
-                <span v-else>{{ $t('admin.updateUser') }}</span>
+                <span v-if="editUserLoading">
+                  <i class="fas fa-spinner fa-spin mr-2"></i>
+                  {{ $t('common.processing') }}
+                </span>
+                <span v-else>
+                  <i class="fas fa-save mr-2"></i>
+                  {{ $t('admin.updateUser') }}
+                </span>
               </button>
             </div>
           </form>
@@ -766,13 +805,14 @@
               <button 
                 type="button"
                 @click="showReplyModal = false"
-                class="btn-secondary"
+                class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200"
               >
+                <i class="fas fa-times mr-2"></i>
                 {{ $t('common.cancel') }}
               </button>
               <button 
                 type="submit"
-                class="btn-primary"
+                class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
                 :disabled="replyLoading || !replyMessage.trim()"
               >
                 <span v-if="replyLoading">
@@ -941,6 +981,7 @@
 <script>
 import { ref, onMounted, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import AppHeader from '@/components/AppHeader.vue'
 import Pagination from '@/components/Pagination.vue'
@@ -957,6 +998,8 @@ export default {
   },
   setup() {
     const { t } = useI18n()
+    const route = useRoute()
+    const router = useRouter()
     const authStore = useAuthStore()
     const user = computed(() => authStore.user)
     
@@ -964,7 +1007,7 @@ export default {
     const isAdminUser = computed(() => user.value?.is_admin === true)
     
     // State variables
-    const activeTab = ref('users')
+    const activeTab = ref(route.query.tab || 'users')
     const transactionFilter = ref('')
     const ticketFilter = ref('')
     
@@ -1093,9 +1136,14 @@ export default {
       currentPage.value = 1
     })
 
-    // Watch for tab changes to reset pagination
-    watch(activeTab, () => {
+    // Watch for tab changes to reset pagination and update URL
+    watch(activeTab, (newTab) => {
       currentPage.value = 1
+      // Update URL with current tab
+      router.replace({ 
+        path: route.path, 
+        query: { ...route.query, tab: newTab } 
+      })
     })
 
     const tabs = [
@@ -1914,6 +1962,8 @@ export default {
 
     return {
       user,
+      route,
+      router,
       activeTab,
       transactionFilter,
       ticketFilter,
