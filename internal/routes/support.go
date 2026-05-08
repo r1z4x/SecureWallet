@@ -2,7 +2,6 @@ package routes
 
 import (
 	"net/http"
-	"securewallet/internal/config"
 	"securewallet/internal/middleware"
 	"securewallet/internal/models"
 
@@ -13,6 +12,7 @@ import (
 func SetupSupportRoutes(router *gin.RouterGroup) {
 	support := router.Group("/support")
 	support.Use(middleware.AuthMiddleware())
+	support.Use(middleware.ShardMiddleware())
 	{
 		support.GET("/tickets", middleware.RequirePermission(models.PermSupportRead), getTickets)
 		support.GET("/tickets/:id", middleware.RequirePermission(models.PermSupportRead), getTicket)
@@ -40,7 +40,7 @@ func getTickets(c *gin.Context) {
 	}
 
 	currentUser := user.(*models.User)
-	db := config.GetDB()
+	db := middleware.DB(c)
 
 	var tickets []models.SupportTicket
 	if err := db.Where("user_id = ?", currentUser.ID).Order("created_at DESC").Find(&tickets).Error; err != nil {
@@ -98,7 +98,7 @@ func createTicket(c *gin.Context) {
 	}
 
 	currentUser := user.(*models.User)
-	db := config.GetDB()
+	db := middleware.DB(c)
 
 	ticket := models.SupportTicket{
 		UserID:      currentUser.ID,

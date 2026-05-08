@@ -115,6 +115,14 @@ func Heartbeat() HealthStatus {
 		overall = "degraded"
 	}
 
+	shardCheck := checkShards()
+	checks["shards"] = shardCheck
+	if shardCheck.Status == "degraded" {
+		if overall == "ok" {
+			overall = "degraded"
+		}
+	}
+
 	if !workflowOK.Load() {
 		overall = "degraded"
 	}
@@ -225,6 +233,25 @@ func SystemInfo() map[string]interface{} {
 		"environment": getEnv("ENVIRONMENT", "production"),
 		"app_version": getEnv("APP_VERSION", "unknown"),
 	}
+}
+
+func checkShards() Check {
+	monitor := config.GetShardMonitor()
+	if monitor == nil {
+		return Check{Status: "ok", Details: "shard monitoring not active"}
+	}
+
+	h := monitor.Health()
+	if len(h.Alerts) > 0 {
+		detail := fmt.Sprintf("alerts=%d", len(h.Alerts))
+		for _, a := range h.Alerts {
+			detail += fmt.Sprintf(" [shard_%d:%s]", a.ShardIdx, a.Type)
+		}
+		return Check{Status: "degraded", Details: detail}
+	}
+
+	detail := fmt.Sprintf("mode=%s shards=%d queries_ok", h.Mode, h.ShardCount)
+	return Check{Status: "ok", Details: detail}
 }
 
 func getEnv(key, fallback string) string {

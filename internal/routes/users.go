@@ -5,7 +5,6 @@ import (
 	"sync"
 	"time"
 
-	"securewallet/internal/config"
 	"securewallet/internal/middleware"
 	"securewallet/internal/models"
 
@@ -53,6 +52,7 @@ var (
 func SetupUserRoutes(router *gin.RouterGroup) {
 	users := router.Group("/users")
 	users.Use(middleware.AuthMiddleware())
+	users.Use(middleware.ShardMiddleware())
 	{
 		// Admin-only user management
 		users.GET("/", middleware.RequirePermission(models.PermUserRead), getUsers)
@@ -98,7 +98,7 @@ func searchUsers(c *gin.Context) {
 		}
 	}
 
-	db := config.GetDB()
+	db := middleware.DefaultDB(c)
 	var users []models.User
 
 	// SECURE: Use parameterized queries to prevent SQL injection
@@ -222,7 +222,7 @@ func getUsers(c *gin.Context) {
 		return
 	}
 
-	db := config.GetDB()
+	db := middleware.DefaultDB(c)
 	var users []models.User
 
 	// Get all users with pagination (limit to 100 for performance)
@@ -295,7 +295,7 @@ func deleteCurrentUserAccount(c *gin.Context) {
 	}
 
 	currentUser := user.(*models.User)
-	db := config.GetDB()
+	db := middleware.DB(c)
 
 	// Get fresh user data
 	var userData models.User
@@ -414,7 +414,7 @@ func getUser(c *gin.Context) {
 	}
 
 	id := c.Param("id")
-	db := config.GetDB()
+	db := middleware.DefaultDB(c)
 
 	var targetUser models.User
 	if err := db.First(&targetUser, id).Error; err != nil {
@@ -465,7 +465,7 @@ func updateUser(c *gin.Context) {
 	}
 
 	id := c.Param("id")
-	db := config.GetDB()
+	db := middleware.DefaultDB(c)
 
 	// Check if it's a mock user ID first
 	mockUsersMutex.Lock()
@@ -597,7 +597,7 @@ func deleteUser(c *gin.Context) {
 	}
 
 	id := c.Param("id")
-	db := config.GetDB()
+	db := middleware.DefaultDB(c)
 
 	// Check if it's a mock user ID first
 	mockUsersMutex.Lock()

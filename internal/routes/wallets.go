@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"strings"
 
-	"securewallet/internal/config"
 	"securewallet/internal/middleware"
 	"securewallet/internal/models"
 	"securewallet/internal/services"
@@ -19,6 +18,7 @@ import (
 func SetupWalletRoutes(router *gin.RouterGroup) {
 	wallets := router.Group("/wallets")
 	wallets.Use(middleware.AuthMiddleware())
+	wallets.Use(middleware.ShardMiddleware())
 	{
 		wallets.GET("/", middleware.RequirePermission(models.PermWalletRead), getWallets)
 		wallets.GET("/balance", middleware.RequirePermission(models.PermWalletRead), getBalance)
@@ -81,7 +81,7 @@ func deposit(c *gin.Context) {
 	currentUser := user.(*models.User)
 	audit := services.NewAuditLogger().WithGinContext(c)
 
-	svc := services.NewTransferService()
+	svc := services.NewTransferService(middleware.DB(c))
 	result, err := svc.Deposit(services.DepositRequest{
 		UserID:      currentUser.ID,
 		Amount:      depositReq.Amount,
@@ -167,7 +167,7 @@ func transfer(c *gin.Context) {
 
 	idempotencyKey := c.GetHeader("Idempotency-Key")
 
-	svc := services.NewTransferService()
+	svc := services.NewTransferService(middleware.DB(c))
 	result, err := svc.Transfer(services.TransferRequest{
 		SenderUserID:   currentUser.ID,
 		RecipientEmail: transferReq.Recipient,
@@ -256,7 +256,7 @@ func getBalance(c *gin.Context) {
 	}
 
 	currentUser := user.(*models.User)
-	db := config.GetDB()
+	db := middleware.DB(c)
 
 	var userWallet models.Wallet
 	if err := db.Select("id", "balance", "currency").Where("user_id = ?", currentUser.ID).First(&userWallet).Error; err != nil {
@@ -292,7 +292,7 @@ func getWallets(c *gin.Context) {
 	}
 
 	currentUser := user.(*models.User)
-	db := config.GetDB()
+	db := middleware.DB(c)
 
 	var wallets []models.Wallet
 	if err := db.Where("user_id = ?", currentUser.ID).Find(&wallets).Error; err != nil {
@@ -325,7 +325,7 @@ func getWallet(c *gin.Context) {
 	}
 
 	currentUser := user.(*models.User)
-	db := config.GetDB()
+	db := middleware.DB(c)
 
 	var wallet models.Wallet
 	if err := db.Where("id = ? AND user_id = ?", id, currentUser.ID).First(&wallet).Error; err != nil {
