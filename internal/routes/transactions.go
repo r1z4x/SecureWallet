@@ -14,12 +14,13 @@ import (
 // SetupTransactionRoutes sets up transaction routes
 func SetupTransactionRoutes(router *gin.RouterGroup) {
 	transactions := router.Group("/transactions")
+	transactions.Use(middleware.AuthMiddleware())
 	{
-		transactions.GET("", middleware.AuthMiddleware(), getTransactions)
-		transactions.GET("/:id", middleware.AuthMiddleware(), getTransaction)
-		transactions.POST("", middleware.AuthMiddleware(), createTransaction)
-		transactions.PUT("/:id", middleware.AuthMiddleware(), updateTransaction)
-		transactions.DELETE("/:id", middleware.AuthMiddleware(), deleteTransaction)
+		transactions.GET("", middleware.RequirePermission(models.PermTransferRead), getTransactions)
+		transactions.GET("/:id", middleware.RequirePermission(models.PermTransferRead), getTransaction)
+		transactions.POST("", middleware.RequirePermission(models.PermTransferWrite), createTransaction)
+		transactions.PUT("/:id", middleware.RequirePermission(models.PermTransferWrite), updateTransaction)
+		transactions.DELETE("/:id", middleware.RequirePermission(models.PermTransferDelete), deleteTransaction)
 	}
 }
 

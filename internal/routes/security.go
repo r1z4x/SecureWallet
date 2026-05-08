@@ -2,9 +2,11 @@ package routes
 
 import (
 	"net/http"
-	"securewallet/internal/middleware"
-	"securewallet/internal/services"
 	"strconv"
+
+	"securewallet/internal/middleware"
+	"securewallet/internal/models"
+	"securewallet/internal/services"
 
 	"github.com/gin-gonic/gin"
 )
@@ -12,13 +14,14 @@ import (
 // SetupSecurityRoutes sets up security monitoring routes
 func SetupSecurityRoutes(router *gin.RouterGroup) {
 	security := router.Group("/security")
+	security.Use(middleware.AuthMiddleware())
 	{
 		// Security detection endpoints (admin only)
-		security.GET("/idor/stats", middleware.AuthMiddleware(), middleware.AdminOnlyMiddleware(), getIDORStats)
-		security.GET("/alerts", middleware.AuthMiddleware(), middleware.AdminOnlyMiddleware(), getSecurityAlerts)
-		security.PUT("/alerts/:id/status", middleware.AuthMiddleware(), middleware.AdminOnlyMiddleware(), updateAlertStatus)
-		security.POST("/users/:id/reset-attempts", middleware.AuthMiddleware(), middleware.AdminOnlyMiddleware(), resetUserAttempts)
-		security.POST("/cleanup", middleware.AuthMiddleware(), middleware.AdminOnlyMiddleware(), cleanupSecurityData)
+		security.GET("/idor/stats", middleware.RequirePermission(models.PermSecurityRead), getIDORStats)
+		security.GET("/alerts", middleware.RequirePermission(models.PermSecurityRead), getSecurityAlerts)
+		security.PUT("/alerts/:id/status", middleware.RequirePermission(models.PermSecurityWrite), updateAlertStatus)
+		security.POST("/users/:id/reset-attempts", middleware.RequirePermission(models.PermSecurityWrite), resetUserAttempts)
+		security.POST("/cleanup", middleware.RequirePermission(models.PermSecurityWrite), cleanupSecurityData)
 	}
 }
 

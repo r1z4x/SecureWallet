@@ -15,11 +15,9 @@ import (
 // SetupAdminRoutes sets up admin routes
 func SetupAdminRoutes(router *gin.RouterGroup) {
 	admin := router.Group("/admin")
+	admin.Use(middleware.AuthMiddleware())
+	admin.Use(middleware.RequirePermission(models.PermAdminAll))
 	{
-		// SECURE: Add authentication and admin authorization middleware
-		admin.Use(middleware.AuthMiddleware())
-		admin.Use(middleware.AdminMiddleware())
-
 		admin.GET("/dashboard", getDashboard)
 		admin.GET("/users", getAdminUsers)
 		admin.GET("/transactions", getAdminTransactions)

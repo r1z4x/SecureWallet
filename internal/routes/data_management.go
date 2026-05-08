@@ -2,6 +2,9 @@ package routes
 
 import (
 	"net/http"
+
+	"securewallet/internal/middleware"
+	"securewallet/internal/models"
 	"securewallet/internal/services"
 
 	"github.com/gin-gonic/gin"
@@ -10,6 +13,8 @@ import (
 // SetupDataManagementRoutes sets up data management routes
 func SetupDataManagementRoutes(router *gin.RouterGroup) {
 	data := router.Group("/data")
+	data.Use(middleware.AuthMiddleware())
+	data.Use(middleware.RequirePermission(models.PermDataManage))
 	{
 		data.POST("/init-db", initDatabase)
 		data.DELETE("/clear-sample", clearSampleData)

@@ -47,5 +47,30 @@ export const authService = {
       new_password: newPassword
     })
     return response.data
+  },
+
+  async getOAuthProviders() {
+    const response = await apiClient.get('/auth/oauth/providers')
+    return response.data
+  },
+
+  async getLoginMethods(userId) {
+    const response = await apiClient.get(`/auth/login-methods/${userId}`)
+    return response.data
+  },
+
+  async getMyLoginMethods() {
+    const response = await apiClient.get('/auth/login-methods')
+    return response.data
+  },
+
+  async setOAuthPassword(data) {
+    const response = await apiClient.post('/auth/oauth/set-password', data)
+    return response.data
+  },
+
+  getOAuthAuthorizeURL(provider) {
+    const apiBase = import.meta.env.VITE_API_BASE_URL || window.location.origin
+    return `${apiBase}/api/auth/oauth/${provider}/authorize`
   }
 }

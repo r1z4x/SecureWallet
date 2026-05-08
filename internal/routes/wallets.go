@@ -18,15 +18,16 @@ import (
 // SetupWalletRoutes sets up wallet routes
 func SetupWalletRoutes(router *gin.RouterGroup) {
 	wallets := router.Group("/wallets")
+	wallets.Use(middleware.AuthMiddleware())
 	{
-		wallets.GET("/", middleware.AuthMiddleware(), getWallets)
-		wallets.GET("/balance", middleware.AuthMiddleware(), getBalance)
-		wallets.POST("/deposit", middleware.AuthMiddleware(), deposit)
-		wallets.POST("/transfer", middleware.AuthMiddleware(), middleware.IdempotencyMiddleware("transfer"), transfer)
-		wallets.GET("/:id", middleware.AuthMiddleware(), getWallet)
-		wallets.POST("/", middleware.AuthMiddleware(), createWallet)
-		wallets.PUT("/:id", middleware.AuthMiddleware(), updateWallet)
-		wallets.DELETE("/:id", middleware.AuthMiddleware(), deleteWallet)
+		wallets.GET("/", middleware.RequirePermission(models.PermWalletRead), getWallets)
+		wallets.GET("/balance", middleware.RequirePermission(models.PermWalletRead), getBalance)
+		wallets.POST("/deposit", middleware.RequirePermission(models.PermWalletWrite), deposit)
+		wallets.POST("/transfer", middleware.RequirePermission(models.PermTransferWrite), middleware.IdempotencyMiddleware("transfer"), transfer)
+		wallets.GET("/:id", middleware.RequirePermission(models.PermWalletRead), getWallet)
+		wallets.POST("/", middleware.RequirePermission(models.PermWalletWrite), createWallet)
+		wallets.PUT("/:id", middleware.RequirePermission(models.PermWalletWrite), updateWallet)
+		wallets.DELETE("/:id", middleware.RequirePermission(models.PermWalletDelete), deleteWallet)
 	}
 }
 

@@ -57,7 +57,31 @@
             </div>
 
             <form @submit.prevent="handleLogin" class="bg-white p-8 rounded-lg shadow-lg">
-              <div class="space-y-6">
+              <!-- OAuth Providers -->
+              <div v-if="oauthProviders.length > 0" class="mb-6">
+                <div class="relative mb-4">
+                  <div class="absolute inset-0 flex items-center">
+                    <div class="w-full border-t border-gray-300"></div>
+                  </div>
+                  <div class="relative flex justify-center text-sm">
+                    <span class="px-2 bg-white text-gray-500">{{ $t('auth.orContinueWith') || 'Or continue with' }}</span>
+                  </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                  <button
+                    v-for="provider in oauthProviders"
+                    :key="provider.name"
+                    type="button"
+                    @click="handleOAuthLogin(provider.name)"
+                    class="flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+                  >
+                    <i :class="getProviderIcon(provider.name)" class="mr-2"></i>
+                    {{ capitalizeProvider(provider.name) }}
+                  </button>
+                </div>
+              </div>
+
+              <div v-if="oauthProviders.length > 0" class="space-y-6">
                 <div>
                   <label class="form-label">{{ $t('auth.usernameOrEmail') }}</label>
                   <input 
@@ -144,10 +168,11 @@
 </template>
 
 <script>
-import { ref, watch } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useI18n } from 'vue-i18n'
+import { authService } from '@/services/auth'
 import LanguageSelector from '@/components/LanguageSelector.vue'
 
 export default {
@@ -170,6 +195,38 @@ export default {
     const error = ref('')
     const requires2FA = ref(false)
     const userId2FA = ref(null)
+    const oauthProviders = ref([])
+
+    onMounted(async () => {
+      try {
+        const response = await authService.getOAuthProviders()
+        if (response && response.providers) {
+          oauthProviders.value = response.providers
+        }
+      } catch (err) {
+        // OAuth providers not available, silently ignore
+      }
+    })
+
+    const handleOAuthLogin = (providerName) => {
+      const url = authService.getOAuthAuthorizeURL(providerName)
+      window.location.href = url
+    }
+
+    const getProviderIcon = (name) => {
+      const icons = {
+        google: 'fab fa-google',
+        github: 'fab fa-github',
+        microsoft: 'fab fa-microsoft',
+        facebook: 'fab fa-facebook',
+        apple: 'fab fa-apple'
+      }
+      return icons[name] || 'fas fa-globe'
+    }
+
+    const capitalizeProvider = (name) => {
+      return name.charAt(0).toUpperCase() + name.slice(1)
+    }
 
     const handleLogin = async () => {
       loading.value = true
@@ -220,7 +277,11 @@ export default {
       loading,
       error,
       requires2FA,
-      handleLogin
+      oauthProviders,
+      handleLogin,
+      handleOAuthLogin,
+      getProviderIcon,
+      capitalizeProvider
     }
   }
 }

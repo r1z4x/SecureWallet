@@ -140,6 +140,10 @@ func autoMigrate() error {
 		&models.BlogComment{},
 		&models.BlogCategory{},
 		&models.BlogTag{},
+		&models.Role{},
+		&models.Permission{},
+		&models.OAuthProvider{},
+		&models.OAuthAccount{},
 	)
 }
 
@@ -152,4 +156,12 @@ func GetDB() *gorm.DB {
 // This is useful after database recreation to ensure all parts of the app use the new connection
 func UpdateDB(newDB *gorm.DB) {
 	DB = newDB
+}
+
+// GetAPIBaseURL returns the API base URL from environment
+func GetAPIBaseURL() string {
+	if url := os.Getenv("API_BASE_URL"); url != "" {
+		return url
+	}
+	return "http://localhost:8080"
 }

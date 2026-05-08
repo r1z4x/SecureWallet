@@ -69,15 +69,24 @@ definitions:
       view_count:
         type: integer
     type: object
-  models.Session:
+  models.OAuthAccount:
     properties:
       created_at:
         type: string
-      expires_at:
+      email:
         type: string
       id:
         type: string
-      token:
+      provider:
+        $ref: '#/definitions/models.OAuthProvider'
+      provider_id:
+        type: string
+      provider_name:
+        type: string
+      provider_user_id:
+        description: External user ID from provider
+        type: string
+      token_expiry:
         type: string
       updated_at:
         type: string
@@ -85,6 +94,115 @@ definitions:
         allOf:
         - $ref: '#/definitions/models.User'
         description: Relationships
+      user_id:
+        type: string
+    type: object
+  models.OAuthProvider:
+    properties:
+      auth_url:
+        type: string
+      client_id:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: string
+      is_active:
+        type: boolean
+      name:
+        description: e.g., "google", "github"
+        type: string
+      scopes:
+        description: Comma-separated scopes
+        type: string
+      token_url:
+        type: string
+      updated_at:
+        type: string
+      user_info_url:
+        type: string
+    type: object
+  models.Permission:
+    properties:
+      action:
+        description: e.g., "read", "write", "delete", "admin"
+        type: string
+      created_at:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      name:
+        description: e.g., "wallet:read", "wallet:write", "admin:users"
+        type: string
+      resource:
+        description: e.g., "wallet", "transaction", "user"
+        type: string
+      roles:
+        description: Relationships
+        items:
+          $ref: '#/definitions/models.Role'
+        type: array
+      updated_at:
+        type: string
+    type: object
+  models.Role:
+    properties:
+      created_at:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      is_system:
+        description: System roles cannot be deleted
+        type: boolean
+      name:
+        type: string
+      permissions:
+        items:
+          $ref: '#/definitions/models.Permission'
+        type: array
+      updated_at:
+        type: string
+      users:
+        description: Relationships
+        items:
+          $ref: '#/definitions/models.User'
+        type: array
+    type: object
+  models.Session:
+    properties:
+      created_at:
+        type: string
+      device_name:
+        description: e.g., "Chrome on macOS"
+        type: string
+      expires_at:
+        type: string
+      id:
+        type: string
+      ip_address:
+        description: IPv4 or IPv6
+        type: string
+      is_active:
+        description: Can be revoked without deletion
+        type: boolean
+      last_accessed:
+        type: string
+      token_last_8:
+        description: Last 8 chars for identification
+        type: string
+      updated_at:
+        type: string
+      user:
+        allOf:
+        - $ref: '#/definitions/models.User'
+        description: Relationships
+      user_agent:
+        description: Full user agent string
+        type: string
       user_id:
         type: string
     type: object
@@ -173,6 +291,14 @@ definitions:
         type: boolean
       name:
         type: string
+      oauth_accounts:
+        items:
+          $ref: '#/definitions/models.OAuthAccount'
+        type: array
+      roles:
+        items:
+          $ref: '#/definitions/models.Role'
+        type: array
       sessions:
         items:
           $ref: '#/definitions/models.Session'
@@ -376,6 +502,28 @@ definitions:
         type: string
     required:
     - code
+    type: object
+  services.Check:
+    properties:
+      details:
+        type: string
+      status:
+        type: string
+    type: object
+  services.HealthStatus:
+    properties:
+      checks:
+        additionalProperties:
+          $ref: '#/definitions/services.Check'
+        type: object
+      status:
+        type: string
+      timestamp:
+        type: string
+      uptime:
+        type: string
+      version:
+        type: string
     type: object
 host: localhost:8080
 info:
@@ -832,7 +980,7 @@ paths:
       consumes:
       - application/json
       description: Logout current user session. If a refresh_token is provided, it
-        will be revoked.
+        will be revoked. The current access token is blacklisted.
       parameters:
       - description: Optional refresh token to revoke
         in: body
@@ -1153,6 +1301,80 @@ paths:
       summary: Get data statistics
       tags:
       - data
+  /health:
+    get:
+      description: Simple health check for backward compatibility and Docker healthcheck.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/services.HealthStatus'
+      summary: Legacy health endpoint
+      tags:
+      - health
+  /health/heartbeat:
+    get:
+      description: Returns workflow health including database, redis, and agent workflow
+        status with uptime.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/services.HealthStatus'
+      summary: Workflow heartbeat
+      tags:
+      - health
+  /health/live:
+    get:
+      description: Returns whether the application process is alive. Used by Kubernetes
+        liveness probes.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/services.HealthStatus'
+      summary: Liveness probe
+      tags:
+      - health
+  /health/ready:
+    get:
+      description: Returns whether the application is ready to serve traffic, including
+        dependency health checks.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/services.HealthStatus'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/services.HealthStatus'
+      summary: Readiness probe
+      tags:
+      - health
+  /health/system:
+    get:
+      description: Returns runtime system information including memory, goroutines,
+        and uptime.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: System information
+      tags:
+      - health
   /login-history:
     get:
       consumes:
@@ -1997,286 +2219,6 @@ paths:
       summary: Transfer funds
       tags:
       - wallets
-  /blog/posts:
-    get:
-      consumes:
-      - application/json
-      description: Get all published blog posts with pagination, category filter, and search
-      parameters:
-      - description: Page number
-        in: query
-        name: page
-        type: integer
-      - description: Items per page
-        in: query
-        name: limit
-        type: integer
-      - description: Category filter
-        in: query
-        name: category
-        type: string
-      - description: Search query
-        in: query
-        name: search
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            type: object
-      summary: List blog posts
-      tags:
-      - blog
-  /blog/posts/{slug}:
-    get:
-      consumes:
-      - application/json
-      description: Get a single blog post by slug with comments and related posts
-      parameters:
-      - description: Post slug
-        in: path
-        name: slug
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            type: object
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/gin.H'
-      summary: Get blog post by slug
-      tags:
-      - blog
-  /blog/posts/{slug}/comments:
-    get:
-      consumes:
-      - application/json
-      description: Get approved comments for a blog post with pagination
-      parameters:
-      - description: Post slug
-        in: path
-        name: slug
-        required: true
-        type: string
-      - description: Page number
-        in: query
-        name: page
-        type: integer
-      - description: Items per page
-        in: query
-        name: limit
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            type: object
-      summary: List blog post comments
-      tags:
-      - blog
-    post:
-      consumes:
-      - application/json
-      description: Add a comment to a blog post (pending approval)
-      parameters:
-      - description: Post slug
-        in: path
-        name: slug
-        required: true
-        type: string
-      - description: Comment data
-        in: body
-        name: body
-        required: true
-        schema:
-          type: object
-          properties:
-            name:
-              type: string
-            email:
-              type: string
-            content:
-              type: string
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            $ref: '#/definitions/gin.H'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/gin.H'
-      summary: Add blog comment
-      tags:
-      - blog
-  /blog/categories:
-    get:
-      consumes:
-      - application/json
-      description: Get all blog categories
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            type: array
-            items:
-              type: object
-      summary: List blog categories
-      tags:
-      - blog
-  /blog/tags:
-    get:
-      consumes:
-      - application/json
-      description: Get all blog tags
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            type: array
-            items:
-              type: object
-      summary: List blog tags
-      tags:
-      - blog
-  /blog/comments/stats:
-    get:
-      consumes:
-      - application/json
-      description: Get blog comment statistics
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            type: object
-      summary: Get comment statistics
-      tags:
-      - blog
-  /cron/status:
-    get:
-      consumes:
-      - application/json
-      description: Get cron job status and schedule information
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            type: object
-      summary: Get cron status
-      tags:
-      - cron
-  /cron/execute/{job}:
-    post:
-      consumes:
-      - application/json
-      description: Execute a specific cron job manually
-      parameters:
-      - description: Job name
-        in: path
-        name: job
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/gin.H'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/gin.H'
-      summary: Execute cron job
-      tags:
-      - cron
-  /cron/setup:
-    post:
-      consumes:
-      - application/json
-      description: Setup and start all scheduled cron jobs
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/gin.H'
-      summary: Setup cron jobs
-      tags:
-      - cron
-  /cron/remove:
-    delete:
-      consumes:
-      - application/json
-      description: Stop and remove all scheduled cron jobs
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/gin.H'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/gin.H'
-      summary: Remove cron jobs
-      tags:
-      - cron
-  /cron/comments/stats:
-    get:
-      consumes:
-      - application/json
-      description: Get comment processing statistics
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            type: object
-      summary: Get comment stats
-      tags:
-      - cron
-  /cron/backup/stats:
-    get:
-      consumes:
-      - application/json
-      description: Get backup statistics from cron service
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/gin.H'
-      summary: Get backup stats from cron
-      tags:
-      - cron
 securityDefinitions:
   BearerAuth:
     description: Enter the bearer token string with the "Bearer " prefix, e.g. "Bearer

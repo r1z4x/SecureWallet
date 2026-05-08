@@ -52,14 +52,17 @@ var (
 // SetupUserRoutes sets up user routes
 func SetupUserRoutes(router *gin.RouterGroup) {
 	users := router.Group("/users")
+	users.Use(middleware.AuthMiddleware())
 	{
-		users.GET("/", middleware.AuthMiddleware(), getUsers)
-		users.GET("/search", middleware.AuthMiddleware(), searchUsers)
-		users.GET("/:id", middleware.AuthMiddleware(), getUser)
-		users.POST("/", middleware.AuthMiddleware(), createUser)
-		users.PUT("/:id", middleware.AuthMiddleware(), updateUser)
-		users.DELETE("/:id", middleware.AuthMiddleware(), deleteUser)
-		users.DELETE("/account", middleware.AuthMiddleware(), deleteCurrentUserAccount)
+		// Admin-only user management
+		users.GET("/", middleware.RequirePermission(models.PermUserRead), getUsers)
+		users.GET("/search", middleware.RequirePermission(models.PermUserRead), searchUsers)
+		users.GET("/:id", middleware.RequirePermission(models.PermUserRead), getUser)
+		users.POST("/", middleware.RequirePermission(models.PermUserWrite), createUser)
+		users.PUT("/:id", middleware.RequirePermission(models.PermUserWrite), updateUser)
+		users.DELETE("/:id", middleware.RequirePermission(models.PermUserDelete), deleteUser)
+		// Self-service account deletion (any authenticated user)
+		users.DELETE("/account", deleteCurrentUserAccount)
 	}
 }
 
