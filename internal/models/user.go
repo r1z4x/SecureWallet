@@ -31,6 +31,8 @@ type User struct {
 	AuditLogs      []AuditLog      `json:"audit_logs,omitempty" gorm:"foreignKey:UserID"`
 	SupportTickets []SupportTicket `json:"support_tickets,omitempty" gorm:"foreignKey:UserID"`
 	BlogPosts      []BlogPost      `json:"blog_posts,omitempty" gorm:"foreignKey:AuthorID"`
+	Roles          []Role          `json:"roles,omitempty" gorm:"many2many:user_roles;"`
+	OAuthAccounts  []OAuthAccount  `json:"oauth_accounts,omitempty" gorm:"foreignKey:UserID"`
 }
 
 // TableName specifies the table name for User

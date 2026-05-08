@@ -62,6 +62,12 @@ func main() {
 	// Initialize services
 	services.InitServices()
 
+	// Initialize RBAC system roles and permissions
+	rbacService := services.NewRBACService()
+	if err := rbacService.InitializeSystemRoles(); err != nil {
+		log.Printf("Warning: Failed to initialize RBAC roles: %v", err)
+	}
+
 	// Initialize health service
 	services.InitHealthService()
 
@@ -162,6 +168,8 @@ func main() {
 	api := r.Group("/api")
 	{
 		routes.SetupAuthRoutes(api)
+		routes.SetupOAuthRoutes(api)
+		routes.SetupSessionRoutes(api)
 		routes.SetupUserRoutes(api)
 		routes.SetupWalletRoutes(api)
 		routes.SetupTransactionRoutes(api)
