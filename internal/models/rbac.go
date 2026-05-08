@@ -73,16 +73,56 @@ const (
 
 // System permission names
 const (
-	PermWalletRead    = "wallet:read"
-	PermWalletWrite   = "wallet:write"
-	PermWalletDelete  = "wallet:delete"
+	// Wallet permissions
+	PermWalletRead   = "wallet:read"
+	PermWalletWrite  = "wallet:write"
+	PermWalletDelete = "wallet:delete"
+
+	// Transfer/Transaction permissions
 	PermTransferRead  = "transfer:read"
 	PermTransferWrite = "transfer:write"
-	PermUserRead      = "user:read"
-	PermUserWrite     = "user:write"
-	PermUserDelete    = "user:delete"
-	PermAdminAll      = "admin:*"
-	PermAuditRead     = "audit:read"
-	PermSupportRead   = "support:read"
-	PermSupportWrite  = "support:write"
+	PermTransferDelete = "transfer:delete"
+
+	// User management permissions (admin)
+	PermUserRead   = "user:read"
+	PermUserWrite  = "user:write"
+	PermUserDelete = "user:delete"
+
+	// Session permissions (self-service)
+	PermSessionRead  = "session:read"
+	PermSessionWrite = "session:write"
+
+	// 2FA permissions (self-service)
+	PermTwoFactorRead  = "2fa:read"
+	PermTwoFactorWrite = "2fa:write"
+
+	// Login history permissions (self-service)
+	PermLoginHistoryRead = "login_history:read"
+
+	// Support permissions
+	PermSupportRead  = "support:read"
+	PermSupportWrite = "support:write"
+
+	// Audit permissions
+	PermAuditRead = "audit:read"
+
+	// Backup permissions (admin)
+	PermBackupRead = "backup:read"
+
+	// Security monitoring permissions (admin)
+	PermSecurityRead  = "security:read"
+	PermSecurityWrite = "security:write"
+
+	// Data management permissions (super-admin only)
+	PermDataManage = "data:manage"
+
+	// Cron management permissions (admin)
+	PermCronManage = "cron:manage"
+
+	// Blog permissions
+	PermBlogRead    = "blog:read"
+	PermBlogComment = "blog:comment"
+
+	// Admin super-permission
+	PermAdminAll = "admin:*"
 )

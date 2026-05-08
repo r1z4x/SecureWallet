@@ -14,13 +14,14 @@ import (
 // SetupTwoFactorRoutes sets up 2FA routes
 func SetupTwoFactorRoutes(router *gin.RouterGroup) {
 	twoFactor := router.Group("/2fa")
+	twoFactor.Use(middleware.AuthMiddleware())
 	{
-		twoFactor.POST("/enable", middleware.AuthMiddleware(), enable2FA)
-		twoFactor.POST("/disable", middleware.AuthMiddleware(), disable2FA)
-		twoFactor.POST("/verify", middleware.AuthMiddleware(), verify2FA)
-		twoFactor.GET("/status", middleware.AuthMiddleware(), get2FAStatus)
-		twoFactor.POST("/recovery-codes/generate", middleware.AuthMiddleware(), generateRecoveryCodes)
-		twoFactor.GET("/recovery-codes", middleware.AuthMiddleware(), getRecoveryCodes)
+		twoFactor.POST("/enable", middleware.RequirePermission(models.PermTwoFactorWrite), enable2FA)
+		twoFactor.POST("/disable", middleware.RequirePermission(models.PermTwoFactorWrite), disable2FA)
+		twoFactor.POST("/verify", middleware.RequirePermission(models.PermTwoFactorWrite), verify2FA)
+		twoFactor.GET("/status", middleware.RequirePermission(models.PermTwoFactorRead), get2FAStatus)
+		twoFactor.POST("/recovery-codes/generate", middleware.RequirePermission(models.PermTwoFactorWrite), generateRecoveryCodes)
+		twoFactor.GET("/recovery-codes", middleware.RequirePermission(models.PermTwoFactorRead), getRecoveryCodes)
 	}
 }
 

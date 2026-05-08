@@ -12,12 +12,13 @@ import (
 // SetupSupportRoutes sets up support routes
 func SetupSupportRoutes(router *gin.RouterGroup) {
 	support := router.Group("/support")
+	support.Use(middleware.AuthMiddleware())
 	{
-		support.GET("/tickets", middleware.AuthMiddleware(), getTickets)
-		support.GET("/tickets/:id", middleware.AuthMiddleware(), getTicket)
-		support.POST("/tickets", middleware.AuthMiddleware(), createTicket)
-		support.PUT("/tickets/:id", middleware.AuthMiddleware(), updateTicket)
-		support.DELETE("/tickets/:id", middleware.AuthMiddleware(), deleteTicket)
+		support.GET("/tickets", middleware.RequirePermission(models.PermSupportRead), getTickets)
+		support.GET("/tickets/:id", middleware.RequirePermission(models.PermSupportRead), getTicket)
+		support.POST("/tickets", middleware.RequirePermission(models.PermSupportWrite), createTicket)
+		support.PUT("/tickets/:id", middleware.RequirePermission(models.PermSupportWrite), updateTicket)
+		support.DELETE("/tickets/:id", middleware.RequirePermission(models.PermSupportWrite), deleteTicket)
 	}
 }
 

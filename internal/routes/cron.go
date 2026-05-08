@@ -2,6 +2,9 @@ package routes
 
 import (
 	"net/http"
+
+	"securewallet/internal/middleware"
+	"securewallet/internal/models"
 	"securewallet/internal/services"
 
 	"github.com/gin-gonic/gin"
@@ -10,6 +13,8 @@ import (
 // CronRoutes sets up cron-related routes
 func CronRoutes(router *gin.Engine) {
 	cron := router.Group("/api/cron")
+	cron.Use(middleware.AuthMiddleware())
+	cron.Use(middleware.RequirePermission(models.PermCronManage))
 	{
 		// Get cron status
 		cron.GET("/status", func(c *gin.Context) {

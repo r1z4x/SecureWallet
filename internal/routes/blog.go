@@ -9,6 +9,9 @@ import (
 	"strings"
 	"time"
 
+	"securewallet/internal/middleware"
+	"securewallet/internal/models"
+
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -400,8 +403,8 @@ func BlogRoutes(router *gin.Engine, db *gorm.DB) {
 			c.JSON(http.StatusOK, tags)
 		})
 
-		// Get comment statistics
-		blog.GET("/comments/stats", func(c *gin.Context) {
+		// Get comment statistics (admin only)
+		blog.GET("/comments/stats", middleware.AuthMiddleware(), middleware.RequirePermission(models.PermAdminAll), func(c *gin.Context) {
 			// Get comment stats
 			var totalComments int64
 			var pendingComments int64

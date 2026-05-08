@@ -2,7 +2,9 @@ package routes
 
 import (
 	"net/http"
+
 	"securewallet/internal/middleware"
+	"securewallet/internal/models"
 	"securewallet/internal/services"
 
 	"github.com/gin-gonic/gin"
@@ -11,13 +13,13 @@ import (
 // SetupBackupRoutes sets up backup routes
 func SetupBackupRoutes(router *gin.RouterGroup) {
 	backup := router.Group("/backup")
+	backup.Use(middleware.AuthMiddleware())
+	backup.Use(middleware.RequirePermission(models.PermBackupRead))
 	{
-		// VULNERABLE: These endpoints can leak sensitive information through backups
-		// Manual backup creation is deprecated - use automatic scheduled backups
-		backup.GET("/", middleware.AuthMiddleware(), listBackups)
-		backup.GET("/:filename", middleware.AuthMiddleware(), getBackupInfo)
-		backup.GET("/stats", middleware.AuthMiddleware(), getBackupStats)
-		backup.GET("/config", middleware.AuthMiddleware(), getBackupConfig)
+		backup.GET("/", listBackups)
+		backup.GET("/:filename", getBackupInfo)
+		backup.GET("/stats", getBackupStats)
+		backup.GET("/config", getBackupConfig)
 	}
 }
 

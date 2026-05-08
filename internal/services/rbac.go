@@ -31,18 +31,45 @@ func (s *RBACService) InitializeSystemRoles() error {
 
 	// Create system permissions
 	permissions := []models.Permission{
+		// Wallet
 		{Name: models.PermWalletRead, Description: "Read wallet information", Resource: "wallet", Action: "read"},
 		{Name: models.PermWalletWrite, Description: "Modify wallet information", Resource: "wallet", Action: "write"},
 		{Name: models.PermWalletDelete, Description: "Delete wallets", Resource: "wallet", Action: "delete"},
+		// Transfer/Transaction
 		{Name: models.PermTransferRead, Description: "Read transfer history", Resource: "transfer", Action: "read"},
 		{Name: models.PermTransferWrite, Description: "Initiate transfers", Resource: "transfer", Action: "write"},
-		{Name: models.PermUserRead, Description: "Read user information", Resource: "user", Action: "read"},
-		{Name: models.PermUserWrite, Description: "Modify user information", Resource: "user", Action: "write"},
-		{Name: models.PermUserDelete, Description: "Delete users", Resource: "user", Action: "delete"},
-		{Name: models.PermAdminAll, Description: "Full administrative access", Resource: "admin", Action: "*"},
-		{Name: models.PermAuditRead, Description: "Read audit logs", Resource: "audit", Action: "read"},
+		{Name: models.PermTransferDelete, Description: "Delete transfer records", Resource: "transfer", Action: "delete"},
+		// User management (admin)
+		{Name: models.PermUserRead, Description: "Read user information (admin)", Resource: "user", Action: "read"},
+		{Name: models.PermUserWrite, Description: "Modify user information (admin)", Resource: "user", Action: "write"},
+		{Name: models.PermUserDelete, Description: "Delete users (admin)", Resource: "user", Action: "delete"},
+		// Sessions (self-service)
+		{Name: models.PermSessionRead, Description: "Read own sessions", Resource: "session", Action: "read"},
+		{Name: models.PermSessionWrite, Description: "Revoke own sessions", Resource: "session", Action: "write"},
+		// 2FA (self-service)
+		{Name: models.PermTwoFactorRead, Description: "Read 2FA status and recovery codes", Resource: "2fa", Action: "read"},
+		{Name: models.PermTwoFactorWrite, Description: "Enable/disable 2FA and verify codes", Resource: "2fa", Action: "write"},
+		// Login history (self-service)
+		{Name: models.PermLoginHistoryRead, Description: "Read own login history", Resource: "login_history", Action: "read"},
+		// Support
 		{Name: models.PermSupportRead, Description: "Read support tickets", Resource: "support", Action: "read"},
-		{Name: models.PermSupportWrite, Description: "Manage support tickets", Resource: "support", Action: "write"},
+		{Name: models.PermSupportWrite, Description: "Create and manage support tickets", Resource: "support", Action: "write"},
+		// Audit
+		{Name: models.PermAuditRead, Description: "Read audit logs", Resource: "audit", Action: "read"},
+		// Backup
+		{Name: models.PermBackupRead, Description: "Read backup information", Resource: "backup", Action: "read"},
+		// Security
+		{Name: models.PermSecurityRead, Description: "Read security alerts and stats", Resource: "security", Action: "read"},
+		{Name: models.PermSecurityWrite, Description: "Update security alert status and cleanup", Resource: "security", Action: "write"},
+		// Data management (super-admin)
+		{Name: models.PermDataManage, Description: "Manage database: reset, recreate, seed", Resource: "data", Action: "manage"},
+		// Cron management
+		{Name: models.PermCronManage, Description: "Manage cron jobs", Resource: "cron", Action: "manage"},
+		// Blog
+		{Name: models.PermBlogRead, Description: "Read blog posts and comments", Resource: "blog", Action: "read"},
+		{Name: models.PermBlogComment, Description: "Post blog comments", Resource: "blog", Action: "comment"},
+		// Admin super-permission
+		{Name: models.PermAdminAll, Description: "Full administrative access", Resource: "admin", Action: "*"},
 	}
 
 	for _, perm := range permissions {
@@ -74,17 +101,35 @@ func (s *RBACService) InitializeSystemRoles() error {
 		{
 			Name:        models.RoleUser,
 			Description: "Standard user access",
-			Perms:       []string{models.PermWalletRead, models.PermWalletWrite, models.PermTransferRead, models.PermTransferWrite},
+			Perms: []string{
+				models.PermWalletRead, models.PermWalletWrite,
+				models.PermTransferRead, models.PermTransferWrite,
+				models.PermSessionRead, models.PermSessionWrite,
+				models.PermTwoFactorRead, models.PermTwoFactorWrite,
+				models.PermLoginHistoryRead,
+				models.PermSupportRead, models.PermSupportWrite,
+				models.PermBlogRead, models.PermBlogComment,
+			},
 		},
 		{
 			Name:        models.RoleAuditor,
-			Description: "Read-only access to audit logs and reports",
-			Perms:       []string{models.PermAuditRead, models.PermWalletRead, models.PermTransferRead},
+			Description: "Read-only access to audit logs, security alerts, backups, and system overview",
+			Perms: []string{
+				models.PermAuditRead,
+				models.PermWalletRead, models.PermTransferRead,
+				models.PermSecurityRead,
+				models.PermBackupRead,
+				models.PermUserRead,
+			},
 		},
 		{
 			Name:        models.RoleSupport,
 			Description: "Customer support access",
-			Perms:       []string{models.PermSupportRead, models.PermSupportWrite, models.PermUserRead},
+			Perms: []string{
+				models.PermSupportRead, models.PermSupportWrite,
+				models.PermUserRead, models.PermWalletRead,
+				models.PermTransferRead,
+			},
 		},
 	}
 

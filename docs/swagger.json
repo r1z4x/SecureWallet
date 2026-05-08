@@ -713,7 +713,7 @@
         },
         "/auth/logout": {
             "post": {
-                "description": "Logout current user session. If a refresh_token is provided, it will be revoked.",
+                "description": "Logout current user session. If a refresh_token is provided, it will be revoked. The current access token is blacklisted.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1211,6 +1211,113 @@
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/gin.H"
+                        }
+                    }
+                }
+            }
+        },
+        "/health": {
+            "get": {
+                "description": "Simple health check for backward compatibility and Docker healthcheck.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "health"
+                ],
+                "summary": "Legacy health endpoint",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/services.HealthStatus"
+                        }
+                    }
+                }
+            }
+        },
+        "/health/heartbeat": {
+            "get": {
+                "description": "Returns workflow health including database, redis, and agent workflow status with uptime.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "health"
+                ],
+                "summary": "Workflow heartbeat",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/services.HealthStatus"
+                        }
+                    }
+                }
+            }
+        },
+        "/health/live": {
+            "get": {
+                "description": "Returns whether the application process is alive. Used by Kubernetes liveness probes.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "health"
+                ],
+                "summary": "Liveness probe",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/services.HealthStatus"
+                        }
+                    }
+                }
+            }
+        },
+        "/health/ready": {
+            "get": {
+                "description": "Returns whether the application is ready to serve traffic, including dependency health checks.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "health"
+                ],
+                "summary": "Readiness probe",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/services.HealthStatus"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/services.HealthStatus"
+                        }
+                    }
+                }
+            }
+        },
+        "/health/system": {
+            "get": {
+                "description": "Returns runtime system information including memory, goroutines, and uptime.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "health"
+                ],
+                "summary": "System information",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
                         }
                     }
                 }
@@ -2549,151 +2656,6 @@
                     }
                 }
             }
-        },
-        "/blog/posts": {
-            "get": {
-                "description": "Get all published blog posts with pagination, category filter, and search",
-                "consumes": ["application/json"],
-                "produces": ["application/json"],
-                "tags": ["blog"],
-                "summary": "List blog posts",
-                "parameters": [
-                    {"type": "integer", "description": "Page number", "name": "page", "in": "query"},
-                    {"type": "integer", "description": "Items per page", "name": "limit", "in": "query"},
-                    {"type": "string", "description": "Category filter", "name": "category", "in": "query"},
-                    {"type": "string", "description": "Search query", "name": "search", "in": "query"}
-                ],
-                "responses": {"200": {"description": "OK", "schema": {"type": "object"}}}
-            }
-        },
-        "/blog/posts/{slug}": {
-            "get": {
-                "description": "Get a single blog post by slug with comments and related posts",
-                "consumes": ["application/json"],
-                "produces": ["application/json"],
-                "tags": ["blog"],
-                "summary": "Get blog post by slug",
-                "parameters": [{"type": "string", "description": "Post slug", "name": "slug", "in": "path", "required": true}],
-                "responses": {"200": {"description": "OK", "schema": {"type": "object"}}, "404": {"description": "Not Found", "schema": {"$ref": "#/definitions/gin.H"}}}
-            }
-        },
-        "/blog/posts/{slug}/comments": {
-            "get": {
-                "description": "Get approved comments for a blog post with pagination",
-                "consumes": ["application/json"],
-                "produces": ["application/json"],
-                "tags": ["blog"],
-                "summary": "List blog post comments",
-                "parameters": [
-                    {"type": "string", "description": "Post slug", "name": "slug", "in": "path", "required": true},
-                    {"type": "integer", "description": "Page number", "name": "page", "in": "query"},
-                    {"type": "integer", "description": "Items per page", "name": "limit", "in": "query"}
-                ],
-                "responses": {"200": {"description": "OK", "schema": {"type": "object"}}}
-            },
-            "post": {
-                "description": "Add a comment to a blog post (pending approval)",
-                "consumes": ["application/json"],
-                "produces": ["application/json"],
-                "tags": ["blog"],
-                "summary": "Add blog comment",
-                "parameters": [
-                    {"type": "string", "description": "Post slug", "name": "slug", "in": "path", "required": true},
-                    {"description": "Comment data", "name": "body", "in": "body", "required": true, "schema": {"type": "object", "properties": {"name": {"type": "string"}, "email": {"type": "string"}, "content": {"type": "string"}}}}
-                ],
-                "responses": {"201": {"description": "Created", "schema": {"$ref": "#/definitions/gin.H"}}, "400": {"description": "Bad Request", "schema": {"$ref": "#/definitions/gin.H"}}}
-            }
-        },
-        "/blog/categories": {
-            "get": {
-                "description": "Get all blog categories",
-                "consumes": ["application/json"],
-                "produces": ["application/json"],
-                "tags": ["blog"],
-                "summary": "List blog categories",
-                "responses": {"200": {"description": "OK", "schema": {"type": "array", "items": {"type": "object"}}}}
-            }
-        },
-        "/blog/tags": {
-            "get": {
-                "description": "Get all blog tags",
-                "consumes": ["application/json"],
-                "produces": ["application/json"],
-                "tags": ["blog"],
-                "summary": "List blog tags",
-                "responses": {"200": {"description": "OK", "schema": {"type": "array", "items": {"type": "object"}}}}
-            }
-        },
-        "/blog/comments/stats": {
-            "get": {
-                "description": "Get blog comment statistics",
-                "consumes": ["application/json"],
-                "produces": ["application/json"],
-                "tags": ["blog"],
-                "summary": "Get comment statistics",
-                "responses": {"200": {"description": "OK", "schema": {"type": "object"}}}
-            }
-        },
-        "/cron/status": {
-            "get": {
-                "description": "Get cron job status and schedule information",
-                "consumes": ["application/json"],
-                "produces": ["application/json"],
-                "tags": ["cron"],
-                "summary": "Get cron status",
-                "responses": {"200": {"description": "OK", "schema": {"type": "object"}}}
-            }
-        },
-        "/cron/execute/{job}": {
-            "post": {
-                "description": "Execute a specific cron job manually",
-                "consumes": ["application/json"],
-                "produces": ["application/json"],
-                "tags": ["cron"],
-                "summary": "Execute cron job",
-                "parameters": [{"type": "string", "description": "Job name", "name": "job", "in": "path", "required": true}],
-                "responses": {"200": {"description": "OK", "schema": {"$ref": "#/definitions/gin.H"}}, "500": {"description": "Internal Server Error", "schema": {"$ref": "#/definitions/gin.H"}}}
-            }
-        },
-        "/cron/setup": {
-            "post": {
-                "description": "Setup and start all scheduled cron jobs",
-                "consumes": ["application/json"],
-                "produces": ["application/json"],
-                "tags": ["cron"],
-                "summary": "Setup cron jobs",
-                "responses": {"200": {"description": "OK", "schema": {"$ref": "#/definitions/gin.H"}}}
-            }
-        },
-        "/cron/remove": {
-            "delete": {
-                "description": "Stop and remove all scheduled cron jobs",
-                "consumes": ["application/json"],
-                "produces": ["application/json"],
-                "tags": ["cron"],
-                "summary": "Remove cron jobs",
-                "responses": {"200": {"description": "OK", "schema": {"$ref": "#/definitions/gin.H"}}, "500": {"description": "Internal Server Error", "schema": {"$ref": "#/definitions/gin.H"}}}
-            }
-        },
-        "/cron/comments/stats": {
-            "get": {
-                "description": "Get comment processing statistics",
-                "consumes": ["application/json"],
-                "produces": ["application/json"],
-                "tags": ["cron"],
-                "summary": "Get comment stats",
-                "responses": {"200": {"description": "OK", "schema": {"type": "object"}}}
-            }
-        },
-        "/cron/backup/stats": {
-            "get": {
-                "description": "Get backup statistics from cron service",
-                "consumes": ["application/json"],
-                "produces": ["application/json"],
-                "tags": ["cron"],
-                "summary": "Get backup stats from cron",
-                "responses": {"200": {"description": "OK", "schema": {"type": "object"}}, "500": {"description": "Internal Server Error", "schema": {"$ref": "#/definitions/gin.H"}}}
-            }
         }
     },
     "definitions": {
@@ -2802,19 +2764,32 @@
                 }
             }
         },
-        "models.Session": {
+        "models.OAuthAccount": {
             "type": "object",
             "properties": {
                 "created_at": {
                     "type": "string"
                 },
-                "expires_at": {
+                "email": {
                     "type": "string"
                 },
                 "id": {
                     "type": "string"
                 },
-                "token": {
+                "provider": {
+                    "$ref": "#/definitions/models.OAuthProvider"
+                },
+                "provider_id": {
+                    "type": "string"
+                },
+                "provider_name": {
+                    "type": "string"
+                },
+                "provider_user_id": {
+                    "description": "External user ID from provider",
+                    "type": "string"
+                },
+                "token_expiry": {
                     "type": "string"
                 },
                 "updated_at": {
@@ -2827,6 +2802,167 @@
                             "$ref": "#/definitions/models.User"
                         }
                     ]
+                },
+                "user_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.OAuthProvider": {
+            "type": "object",
+            "properties": {
+                "auth_url": {
+                    "type": "string"
+                },
+                "client_id": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "description": "e.g., \"google\", \"github\"",
+                    "type": "string"
+                },
+                "scopes": {
+                    "description": "Comma-separated scopes",
+                    "type": "string"
+                },
+                "token_url": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "user_info_url": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.Permission": {
+            "type": "object",
+            "properties": {
+                "action": {
+                    "description": "e.g., \"read\", \"write\", \"delete\", \"admin\"",
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "description": "e.g., \"wallet:read\", \"wallet:write\", \"admin:users\"",
+                    "type": "string"
+                },
+                "resource": {
+                    "description": "e.g., \"wallet\", \"transaction\", \"user\"",
+                    "type": "string"
+                },
+                "roles": {
+                    "description": "Relationships",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.Role"
+                    }
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.Role": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_system": {
+                    "description": "System roles cannot be deleted",
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "permissions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.Permission"
+                    }
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "users": {
+                    "description": "Relationships",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.User"
+                    }
+                }
+            }
+        },
+        "models.Session": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "device_name": {
+                    "description": "e.g., \"Chrome on macOS\"",
+                    "type": "string"
+                },
+                "expires_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "ip_address": {
+                    "description": "IPv4 or IPv6",
+                    "type": "string"
+                },
+                "is_active": {
+                    "description": "Can be revoked without deletion",
+                    "type": "boolean"
+                },
+                "last_accessed": {
+                    "type": "string"
+                },
+                "token_last_8": {
+                    "description": "Last 8 chars for identification",
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "user": {
+                    "description": "Relationships",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/models.User"
+                        }
+                    ]
+                },
+                "user_agent": {
+                    "description": "Full user agent string",
+                    "type": "string"
                 },
                 "user_id": {
                     "type": "string"
@@ -2964,6 +3100,18 @@
                 },
                 "name": {
                     "type": "string"
+                },
+                "oauth_accounts": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.OAuthAccount"
+                    }
+                },
+                "roles": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.Role"
+                    }
                 },
                 "sessions": {
                     "type": "array",
@@ -3273,6 +3421,40 @@
             ],
             "properties": {
                 "code": {
+                    "type": "string"
+                }
+            }
+        },
+        "services.Check": {
+            "type": "object",
+            "properties": {
+                "details": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "services.HealthStatus": {
+            "type": "object",
+            "properties": {
+                "checks": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/definitions/services.Check"
+                    }
+                },
+                "status": {
+                    "type": "string"
+                },
+                "timestamp": {
+                    "type": "string"
+                },
+                "uptime": {
+                    "type": "string"
+                },
+                "version": {
                     "type": "string"
                 }
             }

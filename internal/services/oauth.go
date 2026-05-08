@@ -14,7 +14,9 @@ import (
 	"securewallet/internal/config"
 	"securewallet/internal/models"
 
+	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
@@ -201,7 +203,10 @@ func (s *OAuthService) LinkOAuthAccount(userID uuid.UUID, providerName string, u
 	return s.db.Create(&account).Error
 }
 
-// FindOrCreateUserByOAuth finds an existing user by OAuth account or creates a new one
+// FindOrCreateUserByOAuth finds an existing user by OAuth account or creates a new one.
+// If a user with the same email exists but no OAuth link, returns ErrEmailCollision.
+var ErrEmailCollision = fmt.Errorf("email_collision")
+
 func (s *OAuthService) FindOrCreateUserByOAuth(providerName string, userInfo *OAuthUserInfo) (*models.User, error) {
 	var provider models.OAuthProvider
 	if err := s.db.Where("name = ?", providerName).First(&provider).Error; err != nil {
@@ -219,7 +224,7 @@ func (s *OAuthService) FindOrCreateUserByOAuth(providerName string, userInfo *OA
 	if userInfo.Email != "" {
 		var user models.User
 		if err := s.db.Where("email = ?", userInfo.Email).First(&user).Error; err == nil {
-			return nil, fmt.Errorf("user with email already exists, please login with password first")
+			return nil, ErrEmailCollision
 		}
 	}
 
@@ -267,6 +272,30 @@ func (s *OAuthService) FindOrCreateUserByOAuth(providerName string, userInfo *OA
 	return &user, nil
 }
 
+// LinkExistingUserToOAuth links an OAuth account to an existing user (for email collision resolution)
+func (s *OAuthService) LinkExistingUserToOAuth(userID uuid.UUID, providerName string, userInfo *OAuthUserInfo) error {
+	var provider models.OAuthProvider
+	if err := s.db.Where("name = ?", providerName).First(&provider).Error; err != nil {
+		return fmt.Errorf("provider not found: %v", err)
+	}
+
+	var existing models.OAuthAccount
+	if err := s.db.Where("provider_id = ? AND provider_user_id = ?", provider.ID, userInfo.ProviderUserID).
+		First(&existing).Error; err == nil {
+		return fmt.Errorf("oauth account already linked to another user")
+	}
+
+	account := models.OAuthAccount{
+		UserID:         userID,
+		ProviderID:     provider.ID,
+		ProviderName:   providerName,
+		ProviderUserID: userInfo.ProviderUserID,
+		Email:          userInfo.Email,
+	}
+
+	return s.db.Create(&account).Error
+}
+
 // GetOAuthProviders returns all active OAuth providers
 func (s *OAuthService) GetOAuthProviders() ([]models.OAuthProvider, error) {
 	var providers []models.OAuthProvider
@@ -305,4 +334,125 @@ func generateOAuthUsername(providerName string, userInfo *OAuthUserInfo) string 
 		return fmt.Sprintf("%s_%s", providerName, parts[0])
 	}
 	return fmt.Sprintf("%s_%s", providerName, userInfo.ProviderUserID[:8])
+}
+
+// LoginMethodsResponse describes what authentication methods a user has configured
+type LoginMethodsResponse struct {
+	HasPassword      bool     `json:"has_password"`
+	HasTwoFactor     bool     `json:"has_two_factor"`
+	OAuthProviders   []string `json:"oauth_providers"`
+	RequiresPassword bool     `json:"requires_password"`
+}
+
+// GetUserLoginMethods returns the login methods configured for a user
+func (s *OAuthService) GetUserLoginMethods(userID uuid.UUID) (*LoginMethodsResponse, error) {
+	var user models.User
+	if err := s.db.First(&user, userID).Error; err != nil {
+		return nil, fmt.Errorf("user not found: %v", err)
+	}
+
+	var oauthAccounts []models.OAuthAccount
+	if err := s.db.Where("user_id = ?", userID).Find(&oauthAccounts).Error; err != nil {
+		return nil, fmt.Errorf("failed to fetch oauth accounts: %v", err)
+	}
+
+	providers := make([]string, 0, len(oauthAccounts))
+	for _, acc := range oauthAccounts {
+		providers = append(providers, acc.ProviderName)
+	}
+
+	return &LoginMethodsResponse{
+		HasPassword:      user.PasswordHash != "",
+		HasTwoFactor:     user.TwoFactorEnabled,
+		OAuthProviders:   providers,
+		RequiresPassword: user.PasswordHash == "" && len(oauthAccounts) == 0,
+	}, nil
+}
+
+// SetPasswordForOAuthUser allows an OAuth-only user to set a native password
+func (s *OAuthService) SetPasswordForOAuthUser(userID uuid.UUID, currentPassword, newPassword string) error {
+	var user models.User
+	if err := s.db.First(&user, userID).Error; err != nil {
+		return fmt.Errorf("user not found: %v", err)
+	}
+
+	if user.PasswordHash != "" {
+		if currentPassword == "" {
+			return fmt.Errorf("current password is required")
+		}
+		if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(currentPassword)); err != nil {
+			return fmt.Errorf("current password is incorrect")
+		}
+	}
+
+	if len(newPassword) < 12 {
+		return fmt.Errorf("password must be at least 12 characters")
+	}
+	hasU, hasL, hasD, hasS := false, false, false, false
+	for _, ch := range newPassword {
+		switch {
+		case ch >= 'A' && ch <= 'Z':
+			hasU = true
+		case ch >= 'a' && ch <= 'z':
+			hasL = true
+		case ch >= '0' && ch <= '9':
+			hasD = true
+		default:
+			hasS = true
+		}
+	}
+	if !hasU || !hasL || !hasD || !hasS {
+		return fmt.Errorf("password must include uppercase, lowercase, digit, and special character")
+	}
+
+	hash, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return fmt.Errorf("failed to hash password: %v", err)
+	}
+
+	return s.db.Model(&user).Update("password_hash", string(hash)).Error
+}
+
+// FindUserByEmailForOAuth finds an existing user by email for potential OAuth linking
+func (s *OAuthService) FindUserByEmailForOAuth(email string) (*models.User, error) {
+	if email == "" {
+		return nil, nil
+	}
+	var user models.User
+	if err := s.db.Where("email = ?", email).First(&user).Error; err != nil {
+		return nil, nil
+	}
+	return &user, nil
+}
+
+// CompleteOAuthLogin handles the full OAuth login flow including 2FA check and audit logging
+func (s *OAuthService) CompleteOAuthLogin(user *models.User, c *gin.Context) (*TokenPair, bool, error) {
+	audit := NewAuditLogger()
+	if c != nil {
+		audit = audit.WithGinContext(c)
+	}
+
+	loginHistoryService := NewLoginHistoryService()
+	if c != nil {
+		loginHistoryService.RecordLoginAttempt(user.ID, "success", c.Request)
+	}
+
+	audit.Log(user.ID, "OAUTH_LOGIN_SUCCESS", "auth", "OAuth authentication successful: "+user.Username, AuditResultSuccess)
+
+	if !user.IsActive {
+		audit.Log(user.ID, "OAUTH_LOGIN_DENIED", "auth", "Account disabled", AuditResultDenied)
+		return nil, false, fmt.Errorf("account is disabled")
+	}
+
+	if user.TwoFactorEnabled {
+		return nil, true, nil
+	}
+
+	tokenPair, err := CreateTokenPair(user)
+	if err != nil {
+		audit.Log(user.ID, "OAUTH_LOGIN_FAILURE", "auth", "Token creation failed", AuditResultFailure)
+		return nil, false, fmt.Errorf("failed to create session: %v", err)
+	}
+
+	return tokenPair, false, nil
 }

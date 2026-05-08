@@ -14,9 +14,10 @@ import (
 // SetupLoginHistoryRoutes sets up login history routes
 func SetupLoginHistoryRoutes(router *gin.RouterGroup) {
 	loginHistory := router.Group("/login-history")
+	loginHistory.Use(middleware.AuthMiddleware())
 	{
-		loginHistory.GET("/", middleware.AuthMiddleware(), getLoginHistory)
-		loginHistory.GET("/recent", middleware.AuthMiddleware(), getRecentLoginHistory)
+		loginHistory.GET("/", middleware.RequirePermission(models.PermLoginHistoryRead), getLoginHistory)
+		loginHistory.GET("/recent", middleware.RequirePermission(models.PermLoginHistoryRead), getRecentLoginHistory)
 	}
 }
 

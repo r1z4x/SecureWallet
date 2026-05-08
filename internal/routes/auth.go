@@ -299,7 +299,7 @@ type LogoutRequest struct {
 }
 
 // @Summary Logout user
-// @Description Logout current user session. If a refresh_token is provided, it will be revoked.
+// @Description Logout current user session. If a refresh_token is provided, it will be revoked. The current access token is blacklisted.
 // @Tags auth
 // @Accept json
 // @Produce json
@@ -315,6 +315,14 @@ func logout(c *gin.Context) {
 		if u, ok := user.(*models.User); ok {
 			audit := services.NewAuditLogger().WithGinContext(c)
 			audit.Log(u.ID, "LOGOUT", "auth", "User logged out", services.AuditResultSuccess)
+
+			authHeader := c.GetHeader("Authorization")
+			if authHeader != "" {
+				tokenParts := strings.Split(authHeader, " ")
+				if len(tokenParts) == 2 && tokenParts[0] == "Bearer" {
+					services.BlacklistAccessToken(tokenParts[1], u.ID)
+				}
+			}
 		}
 	}
 
@@ -562,6 +570,7 @@ func passwordVerify(c *gin.Context) {
 	}
 
 	_ = services.RevokeAllUserTokens(user.ID)
+	services.BlacklistAllAccessTokensForUser(user.ID)
 
 	delete(secondOrderStorage[req.Email], "reset_token")
 	delete(secondOrderStorage[req.Email], "timestamp")
