@@ -22,7 +22,7 @@ type CommentConfig struct {
 // Default comment configuration
 var DefaultCommentConfig = CommentConfig{
 	AutoApproveDelay: 1 * time.Minute, // Auto-approve after 1 minute (for testing)
-	Enabled:          true,              // Enable auto-approval
+	Enabled:          true,            // Enable auto-approval
 }
 
 // NewCommentService creates a new comment service
@@ -58,7 +58,7 @@ func (cs *CommentService) startCommentApprovalScheduler() {
 // approvePendingComments approves comments that are older than the configured delay
 func (cs *CommentService) approvePendingComments() {
 	cutoffTime := time.Now().Add(-DefaultCommentConfig.AutoApproveDelay)
-	
+
 	// Update comments that are pending and older than cutoff time
 	result := cs.db.Table("blog_comments").
 		Where("status = ? AND created_at <= ?", "pending", cutoffTime).

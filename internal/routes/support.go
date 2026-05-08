@@ -22,6 +22,15 @@ func SetupSupportRoutes(router *gin.RouterGroup) {
 }
 
 // getTickets gets all support tickets for the current user
+// @Summary List support tickets
+// @Description Get all support tickets for the authenticated user
+// @Tags support
+// @Accept json
+// @Produce json
+// @Success 200 {array} models.SupportTicket
+// @Failure 401 {object} gin.H
+// @Security BearerAuth
+// @Router /support/tickets [get]
 func getTickets(c *gin.Context) {
 	user, exists := c.Get("user")
 	if !exists {
@@ -42,6 +51,15 @@ func getTickets(c *gin.Context) {
 }
 
 // getTicket gets a specific support ticket
+// @Summary Get support ticket
+// @Description Get a specific support ticket by ID (must be owned by authenticated user)
+// @Tags support
+// @Accept json
+// @Produce json
+// @Param id path string true "Ticket ID"
+// @Success 200 {object} gin.H
+// @Security BearerAuth
+// @Router /support/tickets/{id} [get]
 func getTicket(c *gin.Context) {
 	id := c.Param("id")
 	c.JSON(http.StatusOK, gin.H{"message": "Get support ticket", "id": id})
@@ -55,6 +73,16 @@ type SupportTicketRequest struct {
 }
 
 // createTicket creates a new support ticket
+// @Summary Create support ticket
+// @Description Create a new support ticket for the authenticated user
+// @Tags support
+// @Accept json
+// @Produce json
+// @Param body body SupportTicketRequest true "Support ticket data"
+// @Success 201 {object} models.SupportTicket
+// @Failure 400 {object} gin.H
+// @Security BearerAuth
+// @Router /support/tickets [post]
 func createTicket(c *gin.Context) {
 	var ticketReq SupportTicketRequest
 	if err := c.ShouldBindJSON(&ticketReq); err != nil {
@@ -88,12 +116,30 @@ func createTicket(c *gin.Context) {
 }
 
 // updateTicket updates a support ticket
+// @Summary Update support ticket
+// @Description Update a support ticket (must be owned by authenticated user)
+// @Tags support
+// @Accept json
+// @Produce json
+// @Param id path string true "Ticket ID"
+// @Success 200 {object} gin.H
+// @Security BearerAuth
+// @Router /support/tickets/{id} [put]
 func updateTicket(c *gin.Context) {
 	id := c.Param("id")
 	c.JSON(http.StatusOK, gin.H{"message": "Update support ticket", "id": id})
 }
 
 // deleteTicket deletes a support ticket
+// @Summary Delete support ticket
+// @Description Delete a support ticket (must be owned by authenticated user)
+// @Tags support
+// @Accept json
+// @Produce json
+// @Param id path string true "Ticket ID"
+// @Success 200 {object} gin.H
+// @Security BearerAuth
+// @Router /support/tickets/{id} [delete]
 func deleteTicket(c *gin.Context) {
 	id := c.Param("id")
 	c.JSON(http.StatusOK, gin.H{"message": "Delete support ticket", "id": id})

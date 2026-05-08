@@ -23,6 +23,14 @@ func SetupSecurityRoutes(router *gin.RouterGroup) {
 }
 
 // getIDORStats returns IDOR detection statistics
+// @Summary Get IDOR detection stats
+// @Description Get IDOR (Insecure Direct Object Reference) detection statistics (admin only)
+// @Tags security
+// @Accept json
+// @Produce json
+// @Success 200 {object} gin.H
+// @Security BearerAuth
+// @Router /security/idor/stats [get]
 func getIDORStats(c *gin.Context) {
 	securityDetector := services.NewSecurityDetector()
 	stats := securityDetector.GetIDORStats()
@@ -34,6 +42,18 @@ func getIDORStats(c *gin.Context) {
 }
 
 // getSecurityAlerts returns security alerts with filtering
+// @Summary Get security alerts
+// @Description Get security alerts with optional filtering by type, status, and limit (admin only)
+// @Tags security
+// @Accept json
+// @Produce json
+// @Param type query string false "Alert type filter"
+// @Param status query string false "Alert status filter"
+// @Param limit query int false "Number of alerts to return"
+// @Success 200 {object} gin.H
+// @Failure 500 {object} gin.H
+// @Security BearerAuth
+// @Router /security/alerts [get]
 func getSecurityAlerts(c *gin.Context) {
 	alertType := c.Query("type") // IDOR, RATE_LIMIT, etc.
 	status := c.Query("status")  // OPEN, INVESTIGATING, RESOLVED
@@ -69,6 +89,17 @@ func getSecurityAlerts(c *gin.Context) {
 }
 
 // updateAlertStatus updates the status of a security alert
+// @Summary Update security alert status
+// @Description Update the status of a security alert (admin only)
+// @Tags security
+// @Accept json
+// @Produce json
+// @Param id path string true "Alert ID"
+// @Param body body object true "Alert status update data"
+// @Success 200 {object} gin.H
+// @Failure 400 {object} gin.H
+// @Security BearerAuth
+// @Router /security/alerts/{id}/status [put]
 func updateAlertStatus(c *gin.Context) {
 	alertID := c.Param("id")
 
@@ -104,6 +135,15 @@ func updateAlertStatus(c *gin.Context) {
 }
 
 // resetUserAttempts resets security attempt counters for a user
+// @Summary Reset user security attempts
+// @Description Reset security attempt counters for a specific user (admin only)
+// @Tags security
+// @Accept json
+// @Produce json
+// @Param id path string true "User ID"
+// @Success 200 {object} gin.H
+// @Security BearerAuth
+// @Router /security/users/{id}/reset-attempts [post]
 func resetUserAttempts(c *gin.Context) {
 	userID := c.Param("id")
 
@@ -117,6 +157,14 @@ func resetUserAttempts(c *gin.Context) {
 }
 
 // cleanupSecurityData cleans up old security data
+// @Summary Cleanup security data
+// @Description Clean up old security monitoring data (admin only)
+// @Tags security
+// @Accept json
+// @Produce json
+// @Success 200 {object} gin.H
+// @Security BearerAuth
+// @Router /security/cleanup [post]
 func cleanupSecurityData(c *gin.Context) {
 	securityDetector := services.NewSecurityDetector()
 	securityDetector.CleanupOldData()

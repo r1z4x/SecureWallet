@@ -21,11 +21,11 @@ func CronRoutes(router *gin.Engine) {
 		// Execute a specific cron job
 		cron.POST("/execute/:job", func(c *gin.Context) {
 			jobName := c.Param("job")
-			
+
 			cronService := services.NewCronService()
 			if err := cronService.ExecuteCronJob(jobName); err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{
-					"error": "Failed to execute cron job",
+					"error":   "Failed to execute cron job",
 					"details": err.Error(),
 				})
 				return
@@ -33,7 +33,7 @@ func CronRoutes(router *gin.Engine) {
 
 			c.JSON(http.StatusOK, gin.H{
 				"message": "Cron job executed successfully",
-				"job": jobName,
+				"job":     jobName,
 			})
 		})
 
@@ -52,7 +52,7 @@ func CronRoutes(router *gin.Engine) {
 			cronService := services.NewCronService()
 			if err := cronService.RemoveCronJobs(); err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{
-					"error": "Failed to remove cron jobs",
+					"error":   "Failed to remove cron jobs",
 					"details": err.Error(),
 				})
 				return
@@ -76,7 +76,7 @@ func CronRoutes(router *gin.Engine) {
 			backups, err := backupService.ListBackups()
 			if err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{
-					"error": "Failed to list backups",
+					"error":   "Failed to list backups",
 					"details": err.Error(),
 				})
 				return
@@ -84,7 +84,7 @@ func CronRoutes(router *gin.Engine) {
 
 			c.JSON(http.StatusOK, gin.H{
 				"backup_count": len(backups),
-				"backups": backups,
+				"backups":      backups,
 			})
 		})
 	}

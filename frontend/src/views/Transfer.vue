@@ -150,7 +150,16 @@
         <div class="space-y-6">
           <!-- Balance Card -->
           <div class="bg-white rounded-lg shadow-md p-6">
-            <h3 class="text-lg font-semibold text-gray-900 mb-4">{{ $t('transfer.yourBalance') }}</h3>
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">
+              <span>{{ $t('transfer.yourBalance') }}</span>
+              <span
+                v-if="isUsingMockData"
+                class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800 ml-2"
+                title="Backend unavailable — showing demo data"
+              >
+                <i class="fas fa-info-circle mr-1"></i>Demo
+              </span>
+            </h3>
             <div class="text-center">
               <p class="text-3xl font-bold text-primary-600">
                 ${{ walletData.balance?.toFixed(2) || '0.00' }}
@@ -234,9 +243,9 @@
 <script>
 import { ref, onMounted, computed } from 'vue'
 import { useAuthStore } from '@/stores/auth'
+import { useWalletStore } from '@/stores/wallet'
 import AppHeader from '@/components/AppHeader.vue'
 import { walletService } from '@/services/wallet'
-import { transactionService } from '@/services/transaction'
 import { userService } from '@/services/user'
 
 export default {
@@ -246,17 +255,15 @@ export default {
   },
   setup() {
     const authStore = useAuthStore()
+    const walletStore = useWalletStore()
     const user = computed(() => authStore.user)
     
     const transferLoading = ref(false)
     const error = ref('')
     const success = ref('')
     
-    const walletData = ref({
-      balance: 0,
-      transaction_count: 0,
-      currency: 'USD'
-    })
+    const walletData = computed(() => walletStore.walletData)
+    const isUsingMockData = computed(() => walletStore.isUsingMockData)
     
     const userWallet = ref(null)
     const recentTransfers = ref([])
@@ -271,12 +278,9 @@ export default {
 
     const loadWalletData = async () => {
       try {
-        const response = await walletService.getBalance()
-        walletData.value = response
-        
-        // Also get user's wallet details
-        const wallets = await walletService.getWallets()
-        userWallet.value = wallets[0] // Get first wallet
+        await walletStore.loadBalance()
+        await walletStore.loadWallets()
+        userWallet.value = walletStore.wallets[0] || null
       } catch (error) {
         console.error('Error loading wallet data:', error)
       }
@@ -284,14 +288,11 @@ export default {
 
     const loadRecentTransfers = async () => {
       try {
-        const response = await transactionService.getTransactions(20) // Get more transactions to filter
-        
-        // Filter for outgoing transfers only
-        recentTransfers.value = response.filter(t => 
-          t.type === 'transfer' && 
+        await walletStore.loadTransactions(20)
+        recentTransfers.value = walletStore.transactions.filter(t =>
+          (t.type === 'TRANSFER' || t.type === 'transfer') &&
           t.wallet_id === userWallet.value?.id
-        ).slice(0, 5) // Get only the first 5
-        
+        ).slice(0, 5)
       } catch (error) {
         console.error('Error loading recent transfers:', error)
         recentTransfers.value = []
@@ -427,6 +428,7 @@ export default {
       error,
       success,
       walletData,
+      isUsingMockData,
       recentTransfers,
       transferForm,
       isFormValid,

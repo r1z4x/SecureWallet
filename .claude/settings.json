@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(*)",
+      "Read(*)",
+      "Write(*)",
+      "Edit(*)",
+      "WebFetch(*)",
+      "WebSearch(*)",
+      "mcp__github__*",
+      "mcp__filesystem__*",
+      "mcp__postgres__*",
+      "mcp__task-orchestrator__*",
+      "mcp__codebase-memory__*",
+      "mcp__claude-mem__*"
+    ],
+    "deny": []
+  }
+}

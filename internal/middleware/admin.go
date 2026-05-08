@@ -26,7 +26,7 @@ func AdminOnlyMiddleware() gin.HandlerFunc {
 
 		if !currentUser.IsAdmin {
 			c.JSON(http.StatusForbidden, gin.H{
-				"error": "Admin access required",
+				"error":   "Admin access required",
 				"message": "This endpoint is restricted to administrators only",
 			})
 			c.Abort()

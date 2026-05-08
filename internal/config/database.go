@@ -133,6 +133,7 @@ func autoMigrate() error {
 		&models.Transaction{},
 		&models.Session{},
 		&models.AuditLog{},
+		&models.IdempotencyRecord{},
 		&models.SupportTicket{},
 		&models.LoginHistory{},
 		&models.BlogPost{},

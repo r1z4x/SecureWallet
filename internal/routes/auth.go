@@ -17,7 +17,6 @@ import (
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 )
 
@@ -31,7 +30,7 @@ func SetupAuthRoutes(router *gin.RouterGroup) {
 		// SECURE: Add rate limiting to sensitive endpoints
 		auth.POST("/register", middleware.RateLimitMiddleware(), register)
 		auth.POST("/login", middleware.RateLimitMiddleware(), login)
-		auth.POST("/login/2fa", middleware.RateLimitMiddleware(), login2FA)
+		auth.POST("/login/2fa", middleware.RateLimitMiddleware(), middleware.TwoFARateLimitMiddleware(), login2FA)
 		auth.POST("/logout", logout)
 		auth.GET("/me", middleware.AuthMiddleware(), getCurrentUser)
 		auth.POST("/refresh", refreshToken)
@@ -53,10 +52,18 @@ type UserLogin struct {
 	Password string `json:"password" binding:"required"`
 }
 
-// Token represents JWT token response
+// Token represents JWT token response (legacy, kept for backward compatibility)
 type Token struct {
 	AccessToken string `json:"access_token"`
 	TokenType   string `json:"token_type"`
+}
+
+// TokenPairResponse represents the full token response with refresh token
+type TokenPairResponse struct {
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
+	TokenType    string `json:"token_type"`
+	ExpiresIn    int    `json:"expires_in"`
 }
 
 // @Summary Register a new user
@@ -133,37 +140,36 @@ func login(c *gin.Context) {
 	}
 
 	db := config.GetDB()
+	audit := services.NewAuditLogger().WithGinContext(c)
 
-	// VULNERABILITY: Advanced authentication with multiple bypass techniques
 	var user models.User
 	if err := db.Where("username = ?", userCredentials.Username).First(&user).Error; err != nil {
-		// Record failed login attempt - user not found, so we can't record with specific user ID
-		// In a real application, you might want to track failed attempts by IP address instead
+		audit.Log(uuid.Nil, "LOGIN_ATTEMPT", "auth", "User not found: "+userCredentials.Username, services.AuditResultFailure)
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Incorrect username or password"})
 		return
 	}
 
-	// SECURE: Use bcrypt for password verification
 	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(userCredentials.Password)); err != nil {
-		// Record failed login attempt
 		loginHistoryService := services.NewLoginHistoryService()
 		loginHistoryService.RecordLoginAttempt(user.ID, "failed", c.Request)
 
+		audit.Log(user.ID, "LOGIN_ATTEMPT", "auth", "Invalid password", services.AuditResultFailure)
+
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Incorrect username or password"})
 		return
 	}
 
-	// Authentication successful
-	// Record successful login attempt
 	loginHistoryService := services.NewLoginHistoryService()
 	loginHistoryService.RecordLoginAttempt(user.ID, "success", c.Request)
 
+	audit.Log(user.ID, "LOGIN_SUCCESS", "auth", "Authentication successful", services.AuditResultSuccess)
+
 	if !user.IsActive {
+		audit.Log(user.ID, "LOGIN_DENIED", "auth", "Account disabled", services.AuditResultDenied)
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "User account is disabled"})
 		return
 	}
 
-	// Check if 2FA is enabled
 	if user.TwoFactorEnabled {
 		c.JSON(http.StatusOK, gin.H{
 			"requires_2fa": true,
@@ -173,50 +179,38 @@ func login(c *gin.Context) {
 		return
 	}
 
-	// SECURE: Use environment variable for JWT secret and reasonable expiration
-	jwtSecret, err := services.GetJWTSecret()
+	tokenPair, err := services.CreateTokenPair(&user)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "JWT secret not configured"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create session"})
 		return
 	}
 
-	jwtExpireMinutes := os.Getenv("ACCESS_TOKEN_EXPIRE_MINUTES")
-	if jwtExpireMinutes == "" {
-		jwtExpireMinutes = "120" // Default to 2 hours
-	}
-
-	// Create access token with vulnerability-specific settings
-	expireMinutes, err := strconv.Atoi(jwtExpireMinutes)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid ACCESS_TOKEN_EXPIRE_MINUTES value"})
-		return
-	}
-	claims := jwt.MapClaims{
-		"sub": user.Username,
-		"exp": time.Now().Add(time.Duration(expireMinutes) * time.Minute).Unix(),
-		"iat": time.Now().Unix(),
-	}
-
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	accessToken, err := token.SignedString([]byte(jwtSecret))
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create token"})
-		return
-	}
-
-	c.JSON(http.StatusOK, Token{
-		AccessToken: accessToken,
-		TokenType:   "bearer",
+	c.JSON(http.StatusOK, TokenPairResponse{
+		AccessToken:  tokenPair.AccessToken,
+		RefreshToken: tokenPair.RefreshToken,
+		TokenType:    tokenPair.TokenType,
+		ExpiresIn:    tokenPair.ExpiresIn,
 	})
 }
 
 // Login2FARequest represents 2FA login request
 type Login2FARequest struct {
-	UserID uuid.UUID `json:"user_id" binding:"required"`
-	Code   string    `json:"code" binding:"required"`
+	UserID       uuid.UUID `json:"user_id" binding:"required"`
+	Code         string    `json:"code"`
+	RecoveryCode string    `json:"recovery_code"`
 }
 
 // login2FA handles 2FA verification during login
+// @Summary Verify 2FA code during login
+// @Description Verify TOTP code or recovery code to complete login after initial authentication
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param body body Login2FARequest true "2FA verification data"
+// @Success 200 {object} TokenPairResponse
+// @Failure 400 {object} gin.H
+// @Failure 401 {object} gin.H
+// @Router /auth/login/2fa [post]
 func login2FA(c *gin.Context) {
 	var req Login2FARequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -224,71 +218,110 @@ func login2FA(c *gin.Context) {
 		return
 	}
 
-	db := config.GetDB()
+	if req.Code == "" && req.RecoveryCode == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Either code or recovery_code is required"})
+		return
+	}
 
-	// Get user
+	db := config.GetDB()
+	audit := services.NewAuditLogger().WithGinContext(c)
+
 	var user models.User
 	if err := db.First(&user, req.UserID).Error; err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
 		return
 	}
 
-	// Check if 2FA is enabled
 	if !user.TwoFactorEnabled {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "2FA is not enabled for this user"})
 		return
 	}
 
-	// Validate 2FA code
 	twoFactorService := services.NewTwoFactorService()
-	if !twoFactorService.ValidateCode(user.TwoFactorSecret, req.Code) {
-		// Record failed 2FA attempt
-		loginHistoryService := services.NewLoginHistoryService()
-		loginHistoryService.RecordLoginAttempt(user.ID, "failed", c.Request)
 
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid 2FA code"})
+	valid := false
+	if req.RecoveryCode != "" {
+		recoveryValid, err := twoFactorService.ValidateRecoveryCode(user.ID.String(), req.RecoveryCode)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to validate recovery code"})
+			return
+		}
+		if !recoveryValid {
+			loginHistoryService := services.NewLoginHistoryService()
+			loginHistoryService.RecordLoginAttempt(user.ID, "failed", c.Request)
+
+			audit.Log(user.ID, "2FA_VERIFY", "auth", "Invalid recovery code", services.AuditResultFailure)
+
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid recovery code"})
+			return
+		}
+		valid = true
+	} else {
+		if !twoFactorService.ValidateCode(user.TwoFactorSecret, req.Code) {
+			loginHistoryService := services.NewLoginHistoryService()
+			loginHistoryService.RecordLoginAttempt(user.ID, "failed", c.Request)
+
+			audit.Log(user.ID, "2FA_VERIFY", "auth", "Invalid TOTP code", services.AuditResultFailure)
+
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid 2FA code"})
+			return
+		}
+		valid = true
+	}
+
+	if !valid {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid authentication code"})
 		return
 	}
 
-	// Record successful 2FA login
 	loginHistoryService := services.NewLoginHistoryService()
 	loginHistoryService.RecordLoginAttempt(user.ID, "success", c.Request)
 
-	// SECURE: Create JWT token with environment variable and reasonable expiration
-	jwtSecret, err := services.GetJWTSecret()
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "JWT secret not configured"})
-		return
-	}
-	expireMinutes := 60 // 1 hour - reasonable expiration time
+	audit.Log(user.ID, "2FA_VERIFY", "auth", "2FA verification successful", services.AuditResultSuccess)
 
-	claims := jwt.MapClaims{
-		"sub": user.Username,
-		"exp": time.Now().Add(time.Duration(expireMinutes) * time.Minute).Unix(),
-		"iat": time.Now().Unix(),
-	}
-
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	accessToken, err := token.SignedString([]byte(jwtSecret))
+	tokenPair, err := services.CreateTokenPair(&user)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create token"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create session"})
 		return
 	}
 
-	c.JSON(http.StatusOK, Token{
-		AccessToken: accessToken,
-		TokenType:   "bearer",
+	c.JSON(http.StatusOK, TokenPairResponse{
+		AccessToken:  tokenPair.AccessToken,
+		RefreshToken: tokenPair.RefreshToken,
+		TokenType:    tokenPair.TokenType,
+		ExpiresIn:    tokenPair.ExpiresIn,
 	})
 }
 
+// LogoutRequest represents a logout request with optional refresh token revocation
+type LogoutRequest struct {
+	RefreshToken string `json:"refresh_token"`
+}
+
 // @Summary Logout user
-// @Description Logout current user session
+// @Description Logout current user session. If a refresh_token is provided, it will be revoked.
 // @Tags auth
 // @Accept json
 // @Produce json
+// @Param body body LogoutRequest false "Optional refresh token to revoke"
 // @Success 200 {object} gin.H
 // @Router /auth/logout [post]
 func logout(c *gin.Context) {
+	var req LogoutRequest
+	_ = c.ShouldBindJSON(&req)
+
+	user, exists := c.Get("user")
+	if exists {
+		if u, ok := user.(*models.User); ok {
+			audit := services.NewAuditLogger().WithGinContext(c)
+			audit.Log(u.ID, "LOGOUT", "auth", "User logged out", services.AuditResultSuccess)
+		}
+	}
+
+	if req.RefreshToken != "" {
+		_ = services.RevokeToken(req.RefreshToken)
+	}
+
 	c.JSON(http.StatusOK, gin.H{"message": "Successfully logged out"})
 }
 
@@ -311,31 +344,92 @@ func getCurrentUser(c *gin.Context) {
 	c.JSON(http.StatusOK, user)
 }
 
-// @Summary Refresh token
-// @Description Refresh access token
-// @Tags auth
-// @Accept json
-// @Produce json
-// @Success 200 {object} gin.H
-// @Router /auth/refresh [post]
-func refreshToken(c *gin.Context) {
-	// Implementation for token refresh
-	c.JSON(http.StatusOK, gin.H{"message": "Token refreshed"})
+// RefreshTokenRequest represents a token refresh request
+type RefreshTokenRequest struct {
+	RefreshToken string `json:"refresh_token" binding:"required"`
 }
 
-// @Summary Reset password
-// @Description Reset password for a user
+// @Summary Refresh token
+// @Description Refresh access token using a valid refresh token. Implements token rotation: the old refresh token is invalidated and a new one is issued.
 // @Tags auth
 // @Accept json
 // @Produce json
-// @Param email body PasswordResetRequest true "Email for password reset"
+// @Param body body RefreshTokenRequest true "Refresh token"
+// @Success 200 {object} TokenPairResponse
+// @Failure 400 {object} gin.H
+// @Failure 401 {object} gin.H
+// @Router /auth/refresh [post]
+func refreshToken(c *gin.Context) {
+	var req RefreshTokenRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "refresh_token is required"})
+		return
+	}
+
+	db := config.GetDB()
+	audit := services.NewAuditLogger().WithGinContext(c)
+
+	var session models.Session
+	if err := db.Where("token = ?", req.RefreshToken).First(&session).Error; err != nil {
+		audit.Log(uuid.Nil, "TOKEN_REFRESH", "auth", "Invalid refresh token", services.AuditResultFailure)
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid refresh token"})
+		return
+	}
+
+	newRefreshToken, err := services.RotateRefreshToken(session.UserID, req.RefreshToken)
+	if err != nil {
+		audit.Log(session.UserID, "TOKEN_REFRESH", "auth", "Token rotation failed", services.AuditResultFailure)
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Failed to refresh token"})
+		return
+	}
+
+	var user models.User
+	if err := db.First(&user, session.UserID).Error; err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
+		return
+	}
+
+	accessToken, err := services.CreateAccessToken(&user)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create access token"})
+		return
+	}
+
+	audit.Log(user.ID, "TOKEN_REFRESH", "auth", "Token rotated successfully", services.AuditResultSuccess)
+
+	expireMinutesStr := os.Getenv("ACCESS_TOKEN_EXPIRE_MINUTES")
+	expireMinutes := 30
+	if expireMinutesStr != "" {
+		if parsed, err := strconv.Atoi(expireMinutesStr); err == nil && parsed > 0 {
+			expireMinutes = parsed
+		}
+	}
+
+	c.JSON(http.StatusOK, TokenPairResponse{
+		AccessToken:  accessToken,
+		RefreshToken: newRefreshToken,
+		TokenType:    "bearer",
+		ExpiresIn:    expireMinutes * 60,
+	})
+}
+
+// PasswordResetRequest represents a password reset request
+type PasswordResetRequest struct {
+	Email string `json:"email" binding:"required,email"`
+}
+
+// @Summary Request password reset
+// @Description Request a password reset link for the given email address
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param body body PasswordResetRequest true "Email for password reset"
 // @Success 200 {object} gin.H
 // @Failure 400 {object} gin.H
 // @Router /auth/password-reset [post]
 // passwordReset handles password reset
 func passwordReset(c *gin.Context) {
 	email := c.PostForm("email")
-	// In passwordReset: prefer JSON body if form empty
 	if email == "" {
 		var body struct {
 			Email string `json:"email"`
@@ -348,18 +442,16 @@ func passwordReset(c *gin.Context) {
 		}
 	}
 
-	// SECURE: Validate email format
 	if !strings.Contains(email, "@") || len(email) > 100 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid email format"})
 		return
 	}
 
 	db := config.GetDB()
+	audit := services.NewAuditLogger().WithGinContext(c)
 
-	// SECURE: Check if user exists and generate secure reset token
 	var user models.User
 	if err := db.Where("email = ?", email).First(&user).Error; err == nil {
-		// Generate cryptographically secure random token
 		tokenBytes := make([]byte, 32)
 		if _, err := rand.Read(tokenBytes); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate reset token"})
@@ -367,7 +459,6 @@ func passwordReset(c *gin.Context) {
 		}
 		resetToken := fmt.Sprintf("%x", tokenBytes)
 
-		// Store token in Redis with 24h expiration; fallback to memory
 		if rdb := config.GetRedis(); rdb != nil {
 			key := fmt.Sprintf("password_reset:%s", resetToken)
 			if err := rdb.Set(c.Request.Context(), key, fmt.Sprintf("%d", user.ID), 24*time.Hour).Err(); err != nil {
@@ -380,6 +471,8 @@ func passwordReset(c *gin.Context) {
 				"timestamp":   fmt.Sprintf("%d", time.Now().Unix()),
 			}
 		}
+
+		audit.Log(user.ID, "PASSWORD_RESET_REQUEST", "auth", "Password reset requested", services.AuditResultSuccess)
 
 		c.JSON(http.StatusOK, gin.H{"message": "Reset link sent"})
 		return
@@ -395,6 +488,15 @@ type PasswordVerifyRequest struct {
 	NewPassword string `json:"new_password" binding:"required,min=8"`
 }
 
+// @Summary Complete password reset
+// @Description Reset password using the token received via email
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param body body PasswordVerifyRequest true "Password reset verification data"
+// @Success 200 {object} gin.H
+// @Failure 400 {object} gin.H
+// @Router /auth/password-verify [post]
 // passwordVerify handles password reset verification and password change
 func passwordVerify(c *gin.Context) {
 	var req PasswordVerifyRequest
@@ -404,15 +506,15 @@ func passwordVerify(c *gin.Context) {
 	}
 
 	db := config.GetDB()
+	audit := services.NewAuditLogger().WithGinContext(c)
 
-	// SECURE: Validate token securely
 	var user models.User
 	if err := db.Where("email = ?", req.Email).First(&user).Error; err != nil {
+		audit.Log(uuid.Nil, "PASSWORD_RESET_COMPLETE", "auth", "Invalid email or token", services.AuditResultFailure)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid email or token"})
 		return
 	}
 
-	// Validate token with Redis first, then fallback
 	valid := false
 	if rdb := config.GetRedis(); rdb != nil {
 		key := fmt.Sprintf("password_reset:%s", req.Token)
@@ -437,34 +539,35 @@ func passwordVerify(c *gin.Context) {
 		}
 	}
 	if !valid {
+		audit.Log(user.ID, "PASSWORD_RESET_COMPLETE", "auth", "Invalid or expired token", services.AuditResultFailure)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid or expired token"})
 		return
 	}
 
-	// Enforce strong password policy in reset verify
 	if !isStrongPassword(req.NewPassword) {
+		audit.Log(user.ID, "PASSWORD_RESET_COMPLETE", "auth", "Weak password rejected", services.AuditResultFailure)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Password must be at least 12 chars, include upper, lower, number, special"})
 		return
 	}
 
-	// SECURE: Update user password with bcrypt hashing
 	passwordHash, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash password"})
 		return
 	}
 
-	// Update user password in database
 	if err := db.Model(&user).Update("password_hash", passwordHash).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update password"})
 		return
 	}
 
-	// Clear reset token from storage
+	_ = services.RevokeAllUserTokens(user.ID)
+
 	delete(secondOrderStorage[req.Email], "reset_token")
 	delete(secondOrderStorage[req.Email], "timestamp")
 
-	// SECURE: Return minimal information
+	audit.Log(user.ID, "PASSWORD_RESET_COMPLETE", "auth", "Password updated, all sessions revoked", services.AuditResultSuccess)
+
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Password successfully updated",
 	})

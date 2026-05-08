@@ -38,6 +38,7 @@ func (dm *SampleDataManager) InitializeDatabase() error {
 		&models.AuditLog{},
 		&models.Session{},
 		&models.Wallet{},
+		&models.IdempotencyRecord{},
 		&models.User{},
 	); err != nil {
 		log.Printf("Error dropping tables: %v", err)
@@ -51,6 +52,7 @@ func (dm *SampleDataManager) InitializeDatabase() error {
 		&models.Transaction{},
 		&models.Session{},
 		&models.AuditLog{},
+		&models.IdempotencyRecord{},
 		&models.SupportTicket{},
 		&models.LoginHistory{},
 		&models.BlogPost{},
@@ -83,6 +85,11 @@ func (dm *SampleDataManager) ClearSampleData() error {
 	if err := tx.Unscoped().Where("1=1").Delete(&models.Transaction{}).Error; err != nil {
 		tx.Rollback()
 		return fmt.Errorf("failed to clear transactions: %v", err)
+	}
+
+	if err := tx.Unscoped().Where("1=1").Delete(&models.IdempotencyRecord{}).Error; err != nil {
+		tx.Rollback()
+		return fmt.Errorf("failed to clear idempotency records: %v", err)
 	}
 
 	if err := tx.Unscoped().Where("1=1").Delete(&models.LoginHistory{}).Error; err != nil {
@@ -502,8 +509,8 @@ func (dm *SampleDataManager) CreateSampleTransactions() error {
 		return fmt.Errorf("failed to get wallets: %v", err)
 	}
 
-	transactionTypes := []string{"TRANSFER", "DEPOSIT", "WITHDRAWAL", "PAYMENT", "REFUND", "FEE", "BONUS", "INTEREST"}
-	statuses := []string{"completed", "pending", "failed", "cancelled", "processing"}
+	transactionTypes := []string{"transfer_in", "transfer_out", "deposit", "withdrawal"}
+	statuses := []string{"completed", "pending", "failed"}
 	currencies := []string{"USD", "EUR", "GBP", "JPY", "CAD", "AUD", "CHF", "CNY"}
 
 	descriptions := []string{

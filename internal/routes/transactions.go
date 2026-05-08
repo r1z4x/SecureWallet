@@ -24,6 +24,17 @@ func SetupTransactionRoutes(router *gin.RouterGroup) {
 }
 
 // getTransactions gets all transactions for the current user
+// @Summary List transactions
+// @Description Get all transactions for the authenticated user's wallet
+// @Tags transactions
+// @Accept json
+// @Produce json
+// @Param limit query int false "Number of transactions to return" default(50)
+// @Success 200 {array} models.Transaction
+// @Failure 401 {object} gin.H
+// @Failure 404 {object} gin.H
+// @Security BearerAuth
+// @Router /transactions [get]
 func getTransactions(c *gin.Context) {
 	user, exists := c.Get("user")
 	if !exists {
@@ -64,23 +75,58 @@ func getTransactions(c *gin.Context) {
 }
 
 // getTransaction gets a specific transaction
+// @Summary Get transaction by ID
+// @Description Get a specific transaction by ID
+// @Tags transactions
+// @Accept json
+// @Produce json
+// @Param id path string true "Transaction ID"
+// @Success 200 {object} gin.H
+// @Security BearerAuth
+// @Router /transactions/{id} [get]
 func getTransaction(c *gin.Context) {
 	id := c.Param("id")
 	c.JSON(http.StatusOK, gin.H{"message": "Get transaction", "id": id})
 }
 
 // createTransaction creates a new transaction
+// @Summary Create transaction
+// @Description Create a new transaction record
+// @Tags transactions
+// @Accept json
+// @Produce json
+// @Success 201 {object} gin.H
+// @Security BearerAuth
+// @Router /transactions [post]
 func createTransaction(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"message": "Create transaction"})
 }
 
 // updateTransaction updates a transaction
+// @Summary Update transaction
+// @Description Update a transaction record
+// @Tags transactions
+// @Accept json
+// @Produce json
+// @Param id path string true "Transaction ID"
+// @Success 200 {object} gin.H
+// @Security BearerAuth
+// @Router /transactions/{id} [put]
 func updateTransaction(c *gin.Context) {
 	id := c.Param("id")
 	c.JSON(http.StatusOK, gin.H{"message": "Update transaction", "id": id})
 }
 
 // deleteTransaction deletes a transaction
+// @Summary Delete transaction
+// @Description Delete a transaction record
+// @Tags transactions
+// @Accept json
+// @Produce json
+// @Param id path string true "Transaction ID"
+// @Success 200 {object} gin.H
+// @Security BearerAuth
+// @Router /transactions/{id} [delete]
 func deleteTransaction(c *gin.Context) {
 	id := c.Param("id")
 	c.JSON(http.StatusOK, gin.H{"message": "Delete transaction", "id": id})

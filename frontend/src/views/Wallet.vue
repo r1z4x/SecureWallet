@@ -14,7 +14,16 @@
         <!-- Balance Card -->
         <div class="bg-white rounded-lg shadow-md p-6">
           <div class="flex items-center justify-between mb-4">
-            <h3 class="text-lg font-semibold text-gray-900">{{ $t('wallet.currentBalance') }}</h3>
+            <div class="flex items-center gap-2">
+              <h3 class="text-lg font-semibold text-gray-900">{{ $t('wallet.currentBalance') }}</h3>
+              <span
+                v-if="isUsingMockData"
+                class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800"
+                title="Backend unavailable — showing demo data"
+              >
+                <i class="fas fa-info-circle mr-1"></i>Demo
+              </span>
+            </div>
             <i class="fas fa-wallet text-primary-600 text-2xl"></i>
           </div>
           <div class="text-center">
@@ -272,9 +281,9 @@
 <script>
 import { ref, onMounted, computed } from 'vue'
 import { useAuthStore } from '@/stores/auth'
+import { useWalletStore } from '@/stores/wallet'
 import AppHeader from '@/components/AppHeader.vue'
 import { walletService } from '@/services/wallet'
-import { transactionService } from '@/services/transaction'
 
 export default {
   name: 'Wallet',
@@ -283,24 +292,18 @@ export default {
   },
   setup() {
     const authStore = useAuthStore()
+    const walletStore = useWalletStore()
     const user = computed(() => authStore.user)
     
-    const loading = ref(false)
+    const loading = computed(() => walletStore.loading)
     const depositLoading = ref(false)
     const withdrawLoading = ref(false)
     const showDepositModal = ref(false)
     const showWithdrawModal = ref(false)
     
-    const walletData = ref({
-      balance: 0,
-      transaction_count: 0,
-      currency: 'USD',
-      wallet_id: null,
-      created_at: null,
-      updated_at: null
-    })
-    
-    const transactions = ref([])
+    const walletData = computed(() => walletStore.walletData)
+    const isUsingMockData = computed(() => walletStore.isUsingMockData)
+    const transactions = computed(() => walletStore.transactions)
     
     const depositForm = ref({
       amount: '',
@@ -314,22 +317,17 @@ export default {
 
     const loadWalletData = async () => {
       try {
-        const response = await walletService.getBalance()
-        walletData.value = response
+        await walletStore.loadBalance()
       } catch (error) {
         console.error('Error loading wallet data:', error)
       }
     }
 
     const loadTransactions = async () => {
-      loading.value = true
       try {
-        const response = await transactionService.getTransactions(10)
-        transactions.value = response
+        await walletStore.loadTransactions(10)
       } catch (error) {
         console.error('Error loading transactions:', error)
-      } finally {
-        loading.value = false
       }
     }
 
@@ -425,6 +423,7 @@ export default {
       showDepositModal,
       showWithdrawModal,
       walletData,
+      isUsingMockData,
       transactions,
       depositForm,
       withdrawForm,

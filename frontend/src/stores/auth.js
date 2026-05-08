@@ -53,6 +53,9 @@ export const useAuthStore = defineStore('auth', () => {
       // Set token and user data immediately
       token.value = response.access_token
       localStorage.setItem('token', response.access_token)
+      if (response.refresh_token) {
+        localStorage.setItem('refresh_token', response.refresh_token)
+      }
       
       // If user data is not in response, fetch it using getCurrentUser
       if (response.user) {
@@ -104,6 +107,9 @@ export const useAuthStore = defineStore('auth', () => {
       // Set token and user data immediately
       token.value = response.access_token
       localStorage.setItem('token', response.access_token)
+      if (response.refresh_token) {
+        localStorage.setItem('refresh_token', response.refresh_token)
+      }
       
       // If user data is not in response, fetch it using getCurrentUser
       if (response.user) {
@@ -169,6 +175,7 @@ export const useAuthStore = defineStore('auth', () => {
       token.value = null
       user.value = null
       localStorage.removeItem('token')
+      localStorage.removeItem('refresh_token')
       loading.value = false
     }
   }
@@ -203,6 +210,9 @@ export const useAuthStore = defineStore('auth', () => {
       const response = await authService.refreshToken()
       token.value = response.access_token
       localStorage.setItem('token', response.access_token)
+      if (response.refresh_token) {
+        localStorage.setItem('refresh_token', response.refresh_token)
+      }
       return true
     } catch (error) {
       console.error('Token refresh error:', error)
@@ -242,6 +252,7 @@ export const useAuthStore = defineStore('auth', () => {
         // If getCurrentUser fails, clear the token
         token.value = null
         localStorage.removeItem('token')
+        localStorage.removeItem('refresh_token')
       }
     }
   }

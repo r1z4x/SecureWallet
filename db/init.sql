@@ -87,6 +87,27 @@ CREATE TABLE IF NOT EXISTS audit_logs (
     INDEX idx_deleted_at (deleted_at)
 );
 
+-- Idempotency records table
+CREATE TABLE IF NOT EXISTS idempotency_records (
+    id CHAR(36) PRIMARY KEY,
+    key CHAR(36) NOT NULL UNIQUE,
+    user_id CHAR(36) NOT NULL,
+    operation VARCHAR(100) NOT NULL,
+    payload_hash CHAR(64) NOT NULL,
+    status VARCHAR(20) DEFAULT 'pending',
+    http_status INT NOT NULL,
+    response_body TEXT,
+    expires_at TIMESTAMP NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_user_id (user_id),
+    INDEX idx_operation (operation),
+    INDEX idx_expires_at (expires_at),
+    INDEX idx_deleted_at (deleted_at)
+);
+
 -- Support tickets table
 CREATE TABLE IF NOT EXISTS support_tickets (
     id CHAR(36) PRIMARY KEY,

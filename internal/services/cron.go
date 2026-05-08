@@ -19,22 +19,22 @@ type CronService struct {
 
 // CronJob represents a scheduled job
 type CronJob struct {
-	Name        string        // Job name
-	Schedule    string        // Cron schedule (e.g., "*/5 * * * *")
-	Command     string        // Command to execute
-	Description string        // Job description
-	Enabled     bool          // Whether job is enabled
-	LastRun     time.Time     // Last execution time
-	NextRun     time.Time     // Next scheduled run
-	Status      string        // Job status: "pending", "running", "completed", "failed"
-	LogFile     string        // Log file path
+	Name        string    // Job name
+	Schedule    string    // Cron schedule (e.g., "*/5 * * * *")
+	Command     string    // Command to execute
+	Description string    // Job description
+	Enabled     bool      // Whether job is enabled
+	LastRun     time.Time // Last execution time
+	NextRun     time.Time // Next scheduled run
+	Status      string    // Job status: "pending", "running", "completed", "failed"
+	LogFile     string    // Log file path
 }
 
 // CronConfig holds cron configuration
 type CronConfig struct {
-	Enabled     bool          // Whether cron service is enabled
-	LogDir      string        // Directory for cron logs
-	MaxLogFiles int           // Maximum number of log files to keep
+	Enabled     bool   // Whether cron service is enabled
+	LogDir      string // Directory for cron logs
+	MaxLogFiles int    // Maximum number of log files to keep
 }
 
 // Default cron configuration
@@ -230,7 +230,7 @@ func (cs *CronService) RemoveCronJobs() error {
 // GetCronStatus returns the status of all cron jobs
 func (cs *CronService) GetCronStatus() map[string]interface{} {
 	jobs := cs.getCronJobs()
-	
+
 	// Get current crontab to check if jobs are installed
 	cmd := exec.Command("crontab", "-l")
 	currentCrontab, err := cmd.Output()
@@ -278,10 +278,10 @@ func (cs *CronService) ExecuteCronJob(jobName string) error {
 // executeCommentApproval executes the comment auto-approval job
 func (cs *CronService) executeCommentApproval() error {
 	log.Println("Executing comment auto-approval...")
-	
+
 	// Get pending comments older than 10 minutes
 	cutoffTime := time.Now().Add(-10 * time.Minute)
-	
+
 	result := cs.db.Table("blog_comments").
 		Where("status = ? AND created_at <= ?", "pending", cutoffTime).
 		Update("status", "approved")
@@ -303,7 +303,7 @@ func (cs *CronService) executeCommentApproval() error {
 // executeBackup executes the database backup job
 func (cs *CronService) executeBackup() error {
 	log.Println("Executing database backup...")
-	
+
 	backupService := NewBackupService()
 	return backupService.BackupData()
 }
@@ -311,7 +311,7 @@ func (cs *CronService) executeBackup() error {
 // executeLogCleanup executes the log cleanup job
 func (cs *CronService) executeLogCleanup() error {
 	log.Println("Executing log cleanup...")
-	
+
 	// Clean up old cron log files
 	logDir := DefaultCronConfig.LogDir
 	files, err := os.ReadDir(logDir)
@@ -340,10 +340,10 @@ func (cs *CronService) executeLogCleanup() error {
 // executeSecurityMonitoring executes the security monitoring job
 func (cs *CronService) executeSecurityMonitoring() error {
 	log.Println("Executing security monitoring...")
-	
+
 	// This would typically check for security events, generate alerts, etc.
 	// For now, just log that the job ran
 	log.Println("Security monitoring completed")
-	
+
 	return nil
 }

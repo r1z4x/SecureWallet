@@ -21,6 +21,16 @@ func SetupLoginHistoryRoutes(router *gin.RouterGroup) {
 }
 
 // getLoginHistory gets login history for the current user
+// @Summary Get login history
+// @Description Get login history for the authenticated user
+// @Tags login-history
+// @Accept json
+// @Produce json
+// @Param limit query int false "Number of records to return" default(50)
+// @Success 200 {object} gin.H
+// @Failure 401 {object} gin.H
+// @Security BearerAuth
+// @Router /login-history [get]
 func getLoginHistory(c *gin.Context) {
 	user, exists := c.Get("user")
 	if !exists {
@@ -52,6 +62,16 @@ func getLoginHistory(c *gin.Context) {
 }
 
 // getRecentLoginHistory gets recent login history for the current user
+// @Summary Get recent login history
+// @Description Get recent login history for the authenticated user (default 10 records)
+// @Tags login-history
+// @Accept json
+// @Produce json
+// @Param limit query int false "Number of records to return" default(10)
+// @Success 200 {object} gin.H
+// @Failure 401 {object} gin.H
+// @Security BearerAuth
+// @Router /login-history/recent [get]
 func getRecentLoginHistory(c *gin.Context) {
 	user, exists := c.Get("user")
 	if !exists {

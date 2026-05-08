@@ -5,7 +5,6 @@ import (
 	"log"
 	"os"
 	"strings"
-	"time"
 
 	"securewallet/internal/config"
 	"securewallet/internal/middleware"
@@ -20,11 +19,15 @@ import (
 	_ "securewallet/docs" // Swagger docs
 )
 
-// @title SecureWallet - Digital Banking Platform (Vulnerable)
-// @description A comprehensive vulnerable application for OWASP Top 10
+// @title SecureWallet API
+// @description Secure digital banking platform with JWT authentication, TOTP 2FA, multi-currency wallets, atomic transfers, and admin monitoring
 // @version 1.0.0
 // @host localhost:8080
 // @BasePath /api
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description Enter the bearer token string with the "Bearer " prefix, e.g. "Bearer eyJhbGciOiJIUzI1NiIs..."
 func main() {
 	// Parse command line flags
 	cronJob := flag.String("cron", "", "Execute a specific cron job (comment-approval, backup, log-cleanup, security-monitor)")
@@ -58,7 +61,10 @@ func main() {
 
 	// Initialize services
 	services.InitServices()
-	
+
+	// Initialize health service
+	services.InitHealthService()
+
 	// Initialize comment service (starts auto-approval scheduler)
 	services.NewCommentService()
 
@@ -94,6 +100,7 @@ func main() {
 
 	// CORS middleware
 	r.Use(gin.Recovery())
+	r.Use(middleware.CorrelationIDMiddleware())
 	r.Use(middleware.SecurityHeadersMiddleware())
 	r.Use(middleware.InputValidationMiddleware())
 	r.Use(func(c *gin.Context) {
@@ -148,6 +155,9 @@ func main() {
 	// Swagger documentation
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
+	// Health probes
+	routes.SetupHealthRoutes(r)
+
 	// API routes
 	api := r.Group("/api")
 	{
@@ -186,15 +196,6 @@ func main() {
 			"message":      "CORS test successful",
 			"origin":       c.Request.Header.Get("Origin"),
 			"cors_working": true,
-		})
-	})
-
-	// Health check endpoint
-	r.GET("/health", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"status":    "healthy",
-			"app_name":  "SecureWallet - Digital Banking Platform (Vulnerable)",
-			"timestamp": time.Now().Format(time.RFC3339),
 		})
 	})
 

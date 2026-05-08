@@ -35,16 +35,41 @@ func SetupAdminRoutes(router *gin.RouterGroup) {
 }
 
 // getDashboard gets admin dashboard
+// @Summary Admin dashboard
+// @Description Get admin dashboard overview
+// @Tags admin
+// @Accept json
+// @Produce json
+// @Success 200 {object} gin.H
+// @Security BearerAuth
+// @Router /admin/dashboard [get]
 func getDashboard(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Admin dashboard"})
 }
 
 // getAdminUsers gets all users for admin
+// @Summary Admin list users
+// @Description Get all users for admin management
+// @Tags admin
+// @Accept json
+// @Produce json
+// @Success 200 {object} gin.H
+// @Security BearerAuth
+// @Router /admin/users [get]
 func getAdminUsers(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Get all users for admin"})
 }
 
 // getAdminTransactions gets all transactions for admin (system-wide)
+// @Summary Admin list transactions
+// @Description Get all system-wide transactions for admin monitoring
+// @Tags admin
+// @Accept json
+// @Produce json
+// @Param limit query int false "Number of transactions to return" default(100)
+// @Success 200 {array} gin.H
+// @Security BearerAuth
+// @Router /admin/transactions [get]
 func getAdminTransactions(c *gin.Context) {
 	db := config.GetDB()
 
@@ -115,18 +140,44 @@ func getAdminTransactions(c *gin.Context) {
 }
 
 // disableUser disables a user
+// @Summary Disable user
+// @Description Disable a user account (admin only)
+// @Tags admin
+// @Accept json
+// @Produce json
+// @Param id path string true "User ID"
+// @Success 200 {object} gin.H
+// @Security BearerAuth
+// @Router /admin/users/{id}/disable [post]
 func disableUser(c *gin.Context) {
 	id := c.Param("id")
 	c.JSON(http.StatusOK, gin.H{"message": "Disable user", "id": id})
 }
 
 // enableUser enables a user
+// @Summary Enable user
+// @Description Enable a previously disabled user account (admin only)
+// @Tags admin
+// @Accept json
+// @Produce json
+// @Param id path string true "User ID"
+// @Success 200 {object} gin.H
+// @Security BearerAuth
+// @Router /admin/users/{id}/enable [post]
 func enableUser(c *gin.Context) {
 	id := c.Param("id")
 	c.JSON(http.StatusOK, gin.H{"message": "Enable user", "id": id})
 }
 
 // getSystemSettings gets current system settings
+// @Summary Get system settings
+// @Description Get current system configuration settings (admin only)
+// @Tags admin
+// @Accept json
+// @Produce json
+// @Success 200 {object} gin.H
+// @Security BearerAuth
+// @Router /admin/settings [get]
 func getSystemSettings(c *gin.Context) {
 	// TODO: Implement getting settings from database
 	settings := gin.H{
@@ -151,6 +202,16 @@ func getSystemSettings(c *gin.Context) {
 }
 
 // saveSystemSettings saves system settings
+// @Summary Save system settings
+// @Description Update system configuration settings (admin only)
+// @Tags admin
+// @Accept json
+// @Produce json
+// @Param body body object true "Settings data"
+// @Success 200 {object} gin.H
+// @Failure 400 {object} gin.H
+// @Security BearerAuth
+// @Router /admin/settings [post]
 func saveSystemSettings(c *gin.Context) {
 	var settings map[string]interface{}
 	if err := c.ShouldBindJSON(&settings); err != nil {
@@ -167,6 +228,14 @@ func saveSystemSettings(c *gin.Context) {
 }
 
 // getAdminSupportTickets gets all support tickets for admin
+// @Summary Admin list support tickets
+// @Description Get all support tickets for admin review
+// @Tags admin
+// @Accept json
+// @Produce json
+// @Success 200 {array} gin.H
+// @Security BearerAuth
+// @Router /admin/support/tickets [get]
 func getAdminSupportTickets(c *gin.Context) {
 	db := config.GetDB()
 
@@ -278,6 +347,18 @@ type ReplyRequest struct {
 }
 
 // replyToTicket adds a reply to a support ticket
+// @Summary Reply to support ticket
+// @Description Add a reply to a support ticket (admin only)
+// @Tags admin
+// @Accept json
+// @Produce json
+// @Param id path string true "Ticket ID"
+// @Param body body ReplyRequest true "Reply message"
+// @Success 200 {object} gin.H
+// @Failure 400 {object} gin.H
+// @Failure 404 {object} gin.H
+// @Security BearerAuth
+// @Router /admin/support/tickets/{id}/reply [post]
 func replyToTicket(c *gin.Context) {
 	ticketIDStr := c.Param("id")
 
@@ -349,6 +430,17 @@ func replyToTicket(c *gin.Context) {
 }
 
 // resolveTicket resolves a support ticket
+// @Summary Resolve support ticket
+// @Description Mark a support ticket as resolved (admin only)
+// @Tags admin
+// @Accept json
+// @Produce json
+// @Param id path string true "Ticket ID"
+// @Success 200 {object} gin.H
+// @Failure 400 {object} gin.H
+// @Failure 404 {object} gin.H
+// @Security BearerAuth
+// @Router /admin/support/tickets/{id}/resolve [post]
 func resolveTicket(c *gin.Context) {
 	ticketIDStr := c.Param("id")
 

@@ -7,15 +7,19 @@ definitions:
     properties:
       action:
         type: string
+      correlation_id:
+        type: string
       created_at:
         type: string
       details:
         type: string
       id:
-        type: integer
+        type: string
       ip_address:
         type: string
       resource:
+        type: string
+      result:
         type: string
       updated_at:
         type: string
@@ -26,6 +30,43 @@ definitions:
       user_agent:
         type: string
       user_id:
+        type: string
+    type: object
+  models.BlogPost:
+    properties:
+      author:
+        $ref: '#/definitions/models.User'
+      author_id:
+        type: string
+      category:
+        type: string
+      content:
+        type: string
+      created_at:
+        type: string
+      excerpt:
+        type: string
+      id:
+        type: string
+      image:
+        type: string
+      published_at:
+        type: string
+      read_time:
+        type: integer
+      slug:
+        type: string
+      status:
+        description: draft, published, archived
+        type: string
+      tags:
+        description: JSON string of tags
+        type: string
+      title:
+        type: string
+      updated_at:
+        type: string
+      view_count:
         type: integer
     type: object
   models.Session:
@@ -35,7 +76,7 @@ definitions:
       expires_at:
         type: string
       id:
-        type: integer
+        type: string
       token:
         type: string
       updated_at:
@@ -45,7 +86,7 @@ definitions:
         - $ref: '#/definitions/models.User'
         description: Relationships
       user_id:
-        type: integer
+        type: string
     type: object
   models.SupportTicket:
     properties:
@@ -54,7 +95,7 @@ definitions:
       description:
         type: string
       id:
-        type: integer
+        type: string
       priority:
         type: string
       status:
@@ -68,12 +109,16 @@ definitions:
         - $ref: '#/definitions/models.User'
         description: Relationships
       user_id:
-        type: integer
+        type: string
     type: object
   models.Transaction:
     properties:
       amount:
         type: number
+      counterparty_wallet:
+        $ref: '#/definitions/models.Wallet'
+      counterparty_wallet_id:
+        type: string
       created_at:
         type: string
       currency:
@@ -81,11 +126,17 @@ definitions:
       description:
         type: string
       id:
-        type: integer
+        type: string
+      idempotency_key:
+        type: string
+      metadata:
+        type: string
+      reference_id:
+        type: string
       status:
         type: string
       type:
-        description: deposit, withdrawal, transfer
+        description: deposit, withdrawal, transfer_in, transfer_out
         type: string
       updated_at:
         type: string
@@ -94,7 +145,7 @@ definitions:
         - $ref: '#/definitions/models.Wallet'
         description: Relationships
       wallet_id:
-        type: integer
+        type: string
     type: object
   models.User:
     properties:
@@ -102,16 +153,26 @@ definitions:
         items:
           $ref: '#/definitions/models.AuditLog'
         type: array
+      avatar:
+        type: string
+      bio:
+        type: string
+      blog_posts:
+        items:
+          $ref: '#/definitions/models.BlogPost'
+        type: array
       created_at:
         type: string
       email:
         type: string
       id:
-        type: integer
+        type: string
       is_active:
         type: boolean
       is_admin:
         type: boolean
+      name:
+        type: string
       sessions:
         items:
           $ref: '#/definitions/models.Session'
@@ -120,6 +181,10 @@ definitions:
         items:
           $ref: '#/definitions/models.SupportTicket'
         type: array
+      title:
+        type: string
+      two_factor_enabled:
+        type: boolean
       updated_at:
         type: string
       username:
@@ -139,7 +204,7 @@ definitions:
       currency:
         type: string
       id:
-        type: integer
+        type: string
       transactions:
         items:
           $ref: '#/definitions/models.Transaction'
@@ -151,7 +216,106 @@ definitions:
         - $ref: '#/definitions/models.User'
         description: Relationships
       user_id:
+        type: string
+      version:
         type: integer
+    type: object
+  routes.DeleteAccountRequest:
+    properties:
+      confirm:
+        type: string
+      password:
+        type: string
+    required:
+    - confirm
+    - password
+    type: object
+  routes.DepositRequest:
+    properties:
+      amount:
+        type: number
+      description:
+        type: string
+    required:
+    - amount
+    type: object
+  routes.Disable2FARequest:
+    properties:
+      code:
+        type: string
+    required:
+    - code
+    type: object
+  routes.Enable2FARequest:
+    properties:
+      code:
+        type: string
+    required:
+    - code
+    type: object
+  routes.Login2FARequest:
+    properties:
+      code:
+        type: string
+      recovery_code:
+        type: string
+      user_id:
+        type: string
+    required:
+    - user_id
+    type: object
+  routes.LogoutRequest:
+    properties:
+      refresh_token:
+        type: string
+    type: object
+  routes.PasswordResetRequest:
+    properties:
+      email:
+        type: string
+    required:
+    - email
+    type: object
+  routes.PasswordVerifyRequest:
+    properties:
+      email:
+        type: string
+      new_password:
+        minLength: 8
+        type: string
+      token:
+        type: string
+    required:
+    - email
+    - new_password
+    - token
+    type: object
+  routes.RefreshTokenRequest:
+    properties:
+      refresh_token:
+        type: string
+    required:
+    - refresh_token
+    type: object
+  routes.ReplyRequest:
+    properties:
+      message:
+        type: string
+    required:
+    - message
+    type: object
+  routes.SupportTicketRequest:
+    properties:
+      message:
+        type: string
+      priority:
+        type: string
+      subject:
+        type: string
+    required:
+    - message
+    - priority
+    - subject
     type: object
   routes.Token:
     properties:
@@ -159,6 +323,29 @@ definitions:
         type: string
       token_type:
         type: string
+    type: object
+  routes.TokenPairResponse:
+    properties:
+      access_token:
+        type: string
+      expires_in:
+        type: integer
+      refresh_token:
+        type: string
+      token_type:
+        type: string
+    type: object
+  routes.TransferRequest:
+    properties:
+      amount:
+        type: number
+      description:
+        type: string
+      recipient:
+        type: string
+    required:
+    - amount
+    - recipient
     type: object
   routes.UserCreate:
     properties:
@@ -183,13 +370,402 @@ definitions:
     - password
     - username
     type: object
+  routes.Verify2FARequest:
+    properties:
+      code:
+        type: string
+    required:
+    - code
+    type: object
 host: localhost:8080
 info:
   contact: {}
-  description: A comprehensive vulnerable application for OWASP Top 10
-  title: SecureWallet - Digital Banking Platform (Vulnerable)
+  description: Secure digital banking platform with JWT authentication, TOTP 2FA,
+    multi-currency wallets, atomic transfers, and admin monitoring
+  title: SecureWallet API
   version: 1.0.0
 paths:
+  /2fa/disable:
+    post:
+      consumes:
+      - application/json
+      description: Disable TOTP two-factor authentication for the authenticated user
+      parameters:
+      - description: 2FA disable data with TOTP code
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/routes.Disable2FARequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/gin.H'
+      security:
+      - BearerAuth: []
+      summary: Disable 2FA
+      tags:
+      - 2fa
+  /2fa/enable:
+    post:
+      consumes:
+      - application/json
+      description: Enable TOTP two-factor authentication for the authenticated user
+      parameters:
+      - description: 2FA enable data with TOTP code
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/routes.Enable2FARequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/gin.H'
+      security:
+      - BearerAuth: []
+      summary: Enable 2FA
+      tags:
+      - 2fa
+  /2fa/recovery-codes:
+    get:
+      consumes:
+      - application/json
+      description: Get the count of remaining unused recovery codes
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/gin.H'
+      security:
+      - BearerAuth: []
+      summary: Get recovery codes count
+      tags:
+      - 2fa
+  /2fa/recovery-codes/generate:
+    post:
+      consumes:
+      - application/json
+      description: Generate new TOTP recovery codes for the authenticated user (requires
+        2FA enabled)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/gin.H'
+      security:
+      - BearerAuth: []
+      summary: Generate recovery codes
+      tags:
+      - 2fa
+  /2fa/status:
+    get:
+      consumes:
+      - application/json
+      description: Get the 2FA enrollment status for the authenticated user. Returns
+        QR code URL if not yet enabled.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+      security:
+      - BearerAuth: []
+      summary: Get 2FA status
+      tags:
+      - 2fa
+  /2fa/verify:
+    post:
+      consumes:
+      - application/json
+      description: Verify a TOTP code for the authenticated user
+      parameters:
+      - description: TOTP code
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/routes.Verify2FARequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/gin.H'
+      security:
+      - BearerAuth: []
+      summary: Verify 2FA code
+      tags:
+      - 2fa
+  /admin/dashboard:
+    get:
+      consumes:
+      - application/json
+      description: Get admin dashboard overview
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+      security:
+      - BearerAuth: []
+      summary: Admin dashboard
+      tags:
+      - admin
+  /admin/settings:
+    get:
+      consumes:
+      - application/json
+      description: Get current system configuration settings (admin only)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+      security:
+      - BearerAuth: []
+      summary: Get system settings
+      tags:
+      - admin
+    post:
+      consumes:
+      - application/json
+      description: Update system configuration settings (admin only)
+      parameters:
+      - description: Settings data
+        in: body
+        name: body
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/gin.H'
+      security:
+      - BearerAuth: []
+      summary: Save system settings
+      tags:
+      - admin
+  /admin/support/tickets:
+    get:
+      consumes:
+      - application/json
+      description: Get all support tickets for admin review
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/gin.H'
+            type: array
+      security:
+      - BearerAuth: []
+      summary: Admin list support tickets
+      tags:
+      - admin
+  /admin/support/tickets/{id}/reply:
+    post:
+      consumes:
+      - application/json
+      description: Add a reply to a support ticket (admin only)
+      parameters:
+      - description: Ticket ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Reply message
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/routes.ReplyRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/gin.H'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/gin.H'
+      security:
+      - BearerAuth: []
+      summary: Reply to support ticket
+      tags:
+      - admin
+  /admin/support/tickets/{id}/resolve:
+    post:
+      consumes:
+      - application/json
+      description: Mark a support ticket as resolved (admin only)
+      parameters:
+      - description: Ticket ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/gin.H'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/gin.H'
+      security:
+      - BearerAuth: []
+      summary: Resolve support ticket
+      tags:
+      - admin
+  /admin/transactions:
+    get:
+      consumes:
+      - application/json
+      description: Get all system-wide transactions for admin monitoring
+      parameters:
+      - default: 100
+        description: Number of transactions to return
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/gin.H'
+            type: array
+      security:
+      - BearerAuth: []
+      summary: Admin list transactions
+      tags:
+      - admin
+  /admin/users:
+    get:
+      consumes:
+      - application/json
+      description: Get all users for admin management
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+      security:
+      - BearerAuth: []
+      summary: Admin list users
+      tags:
+      - admin
+  /admin/users/{id}/disable:
+    post:
+      consumes:
+      - application/json
+      description: Disable a user account (admin only)
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+      security:
+      - BearerAuth: []
+      summary: Disable user
+      tags:
+      - admin
+  /admin/users/{id}/enable:
+    post:
+      consumes:
+      - application/json
+      description: Enable a previously disabled user account (admin only)
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+      security:
+      - BearerAuth: []
+      summary: Enable user
+      tags:
+      - admin
   /auth/login:
     post:
       consumes:
@@ -220,11 +796,49 @@ paths:
       summary: Login user
       tags:
       - auth
+  /auth/login/2fa:
+    post:
+      consumes:
+      - application/json
+      description: Verify TOTP code or recovery code to complete login after initial
+        authentication
+      parameters:
+      - description: 2FA verification data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/routes.Login2FARequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/routes.TokenPairResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/gin.H'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/gin.H'
+      summary: Verify 2FA code during login
+      tags:
+      - auth
   /auth/logout:
     post:
       consumes:
       - application/json
-      description: Logout current user session
+      description: Logout current user session. If a refresh_token is provided, it
+        will be revoked.
+      parameters:
+      - description: Optional refresh token to revoke
+        in: body
+        name: body
+        schema:
+          $ref: '#/definitions/routes.LogoutRequest'
       produces:
       - application/json
       responses:
@@ -256,16 +870,84 @@ paths:
       summary: Get current user
       tags:
       - auth
-  /auth/refresh:
+  /auth/password-reset:
     post:
       consumes:
       - application/json
-      description: Refresh access token
+      description: Request a password reset link for the given email address
+      parameters:
+      - description: Email for password reset
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/routes.PasswordResetRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/gin.H'
+      summary: Request password reset
+      tags:
+      - auth
+  /auth/password-verify:
+    post:
+      consumes:
+      - application/json
+      description: Reset password using the token received via email
+      parameters:
+      - description: Password reset verification data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/routes.PasswordVerifyRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/gin.H'
+      summary: Complete password reset
+      tags:
+      - auth
+  /auth/refresh:
+    post:
+      consumes:
+      - application/json
+      description: 'Refresh access token using a valid refresh token. Implements token
+        rotation: the old refresh token is invalidated and a new one is issued.'
+      parameters:
+      - description: Refresh token
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/routes.RefreshTokenRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/routes.TokenPairResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/gin.H'
+        "401":
+          description: Unauthorized
           schema:
             $ref: '#/definitions/gin.H'
       summary: Refresh token
@@ -297,4 +979,1309 @@ paths:
       summary: Register a new user
       tags:
       - auth
+  /backup:
+    get:
+      consumes:
+      - application/json
+      description: List all available database backups
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/gin.H'
+      security:
+      - BearerAuth: []
+      summary: List backups
+      tags:
+      - backup
+  /backup/{filename}:
+    get:
+      consumes:
+      - application/json
+      description: Get information about a specific backup file
+      parameters:
+      - description: Backup filename
+        in: path
+        name: filename
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/gin.H'
+      security:
+      - BearerAuth: []
+      summary: Get backup info
+      tags:
+      - backup
+  /backup/config:
+    get:
+      consumes:
+      - application/json
+      description: Get backup configuration settings
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+      security:
+      - BearerAuth: []
+      summary: Get backup config
+      tags:
+      - backup
+  /backup/stats:
+    get:
+      consumes:
+      - application/json
+      description: Get backup statistics and metadata
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+      security:
+      - BearerAuth: []
+      summary: Get backup stats
+      tags:
+      - backup
+  /data/clear-sample:
+    delete:
+      consumes:
+      - application/json
+      description: Clear all sample data
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/gin.H'
+      summary: Clear sample data
+      tags:
+      - data
+  /data/force-recreate:
+    post:
+      consumes:
+      - application/json
+      description: Completely drop and recreate the database (use when schema incompatibility
+        issues occur)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/gin.H'
+      summary: Force database recreation
+      tags:
+      - data
+  /data/init-db:
+    post:
+      consumes:
+      - application/json
+      description: Initialize database tables using GORM auto-migration
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/gin.H'
+      summary: Initialize database tables
+      tags:
+      - data
+  /data/reset-database:
+    post:
+      consumes:
+      - application/json
+      description: Clear all data, initialize database, and create sample data
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/gin.H'
+      summary: Reset database completely
+      tags:
+      - data
+  /data/stats:
+    get:
+      consumes:
+      - application/json
+      description: Get statistics about current data
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+      summary: Get data statistics
+      tags:
+      - data
+  /login-history:
+    get:
+      consumes:
+      - application/json
+      description: Get login history for the authenticated user
+      parameters:
+      - default: 50
+        description: Number of records to return
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/gin.H'
+      security:
+      - BearerAuth: []
+      summary: Get login history
+      tags:
+      - login-history
+  /login-history/recent:
+    get:
+      consumes:
+      - application/json
+      description: Get recent login history for the authenticated user (default 10
+        records)
+      parameters:
+      - default: 10
+        description: Number of records to return
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/gin.H'
+      security:
+      - BearerAuth: []
+      summary: Get recent login history
+      tags:
+      - login-history
+  /security/alerts:
+    get:
+      consumes:
+      - application/json
+      description: Get security alerts with optional filtering by type, status, and
+        limit (admin only)
+      parameters:
+      - description: Alert type filter
+        in: query
+        name: type
+        type: string
+      - description: Alert status filter
+        in: query
+        name: status
+        type: string
+      - description: Number of alerts to return
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/gin.H'
+      security:
+      - BearerAuth: []
+      summary: Get security alerts
+      tags:
+      - security
+  /security/alerts/{id}/status:
+    put:
+      consumes:
+      - application/json
+      description: Update the status of a security alert (admin only)
+      parameters:
+      - description: Alert ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Alert status update data
+        in: body
+        name: body
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/gin.H'
+      security:
+      - BearerAuth: []
+      summary: Update security alert status
+      tags:
+      - security
+  /security/cleanup:
+    post:
+      consumes:
+      - application/json
+      description: Clean up old security monitoring data (admin only)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+      security:
+      - BearerAuth: []
+      summary: Cleanup security data
+      tags:
+      - security
+  /security/idor/stats:
+    get:
+      consumes:
+      - application/json
+      description: Get IDOR (Insecure Direct Object Reference) detection statistics
+        (admin only)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+      security:
+      - BearerAuth: []
+      summary: Get IDOR detection stats
+      tags:
+      - security
+  /security/users/{id}/reset-attempts:
+    post:
+      consumes:
+      - application/json
+      description: Reset security attempt counters for a specific user (admin only)
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+      security:
+      - BearerAuth: []
+      summary: Reset user security attempts
+      tags:
+      - security
+  /support/tickets:
+    get:
+      consumes:
+      - application/json
+      description: Get all support tickets for the authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.SupportTicket'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/gin.H'
+      security:
+      - BearerAuth: []
+      summary: List support tickets
+      tags:
+      - support
+    post:
+      consumes:
+      - application/json
+      description: Create a new support ticket for the authenticated user
+      parameters:
+      - description: Support ticket data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/routes.SupportTicketRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.SupportTicket'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/gin.H'
+      security:
+      - BearerAuth: []
+      summary: Create support ticket
+      tags:
+      - support
+  /support/tickets/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a support ticket (must be owned by authenticated user)
+      parameters:
+      - description: Ticket ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+      security:
+      - BearerAuth: []
+      summary: Delete support ticket
+      tags:
+      - support
+    get:
+      consumes:
+      - application/json
+      description: Get a specific support ticket by ID (must be owned by authenticated
+        user)
+      parameters:
+      - description: Ticket ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+      security:
+      - BearerAuth: []
+      summary: Get support ticket
+      tags:
+      - support
+    put:
+      consumes:
+      - application/json
+      description: Update a support ticket (must be owned by authenticated user)
+      parameters:
+      - description: Ticket ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+      security:
+      - BearerAuth: []
+      summary: Update support ticket
+      tags:
+      - support
+  /transactions:
+    get:
+      consumes:
+      - application/json
+      description: Get all transactions for the authenticated user's wallet
+      parameters:
+      - default: 50
+        description: Number of transactions to return
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Transaction'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/gin.H'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/gin.H'
+      security:
+      - BearerAuth: []
+      summary: List transactions
+      tags:
+      - transactions
+    post:
+      consumes:
+      - application/json
+      description: Create a new transaction record
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/gin.H'
+      security:
+      - BearerAuth: []
+      summary: Create transaction
+      tags:
+      - transactions
+  /transactions/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a transaction record
+      parameters:
+      - description: Transaction ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+      security:
+      - BearerAuth: []
+      summary: Delete transaction
+      tags:
+      - transactions
+    get:
+      consumes:
+      - application/json
+      description: Get a specific transaction by ID
+      parameters:
+      - description: Transaction ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+      security:
+      - BearerAuth: []
+      summary: Get transaction by ID
+      tags:
+      - transactions
+    put:
+      consumes:
+      - application/json
+      description: Update a transaction record
+      parameters:
+      - description: Transaction ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+      security:
+      - BearerAuth: []
+      summary: Update transaction
+      tags:
+      - transactions
+  /users:
+    get:
+      consumes:
+      - application/json
+      description: Get all users with pagination (admin only)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/gin.H'
+            type: array
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/gin.H'
+      security:
+      - BearerAuth: []
+      summary: List users
+      tags:
+      - users
+    post:
+      consumes:
+      - application/json
+      description: Create a new user account (admin only)
+      parameters:
+      - description: User creation data
+        in: body
+        name: body
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/gin.H'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/gin.H'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/gin.H'
+      security:
+      - BearerAuth: []
+      summary: Create user
+      tags:
+      - users
+  /users/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a user account (admin only)
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/gin.H'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/gin.H'
+      security:
+      - BearerAuth: []
+      summary: Delete user
+      tags:
+      - users
+    get:
+      consumes:
+      - application/json
+      description: Get a specific user by ID (admin only)
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/gin.H'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/gin.H'
+      security:
+      - BearerAuth: []
+      summary: Get user by ID
+      tags:
+      - users
+    put:
+      consumes:
+      - application/json
+      description: Update a user's attributes (admin only)
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: User update data
+        in: body
+        name: body
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/gin.H'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/gin.H'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/gin.H'
+      security:
+      - BearerAuth: []
+      summary: Update user
+      tags:
+      - users
+  /users/account:
+    delete:
+      consumes:
+      - application/json
+      description: Delete the authenticated user's own account after password verification
+      parameters:
+      - description: Account deletion confirmation
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/routes.DeleteAccountRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/gin.H'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/gin.H'
+      security:
+      - BearerAuth: []
+      summary: Delete own account
+      tags:
+      - users
+  /users/search:
+    get:
+      consumes:
+      - application/json
+      description: Search for users by username or email (authenticated users only)
+      parameters:
+      - description: Search query
+        in: query
+        name: q
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/gin.H'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/gin.H'
+      security:
+      - BearerAuth: []
+      summary: Search users
+      tags:
+      - users
+  /wallets:
+    get:
+      consumes:
+      - application/json
+      description: Get all wallets owned by the authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Wallet'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/gin.H'
+      security:
+      - BearerAuth: []
+      summary: List wallets
+      tags:
+      - wallets
+    post:
+      consumes:
+      - application/json
+      description: Create a new wallet for the authenticated user
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/gin.H'
+      security:
+      - BearerAuth: []
+      summary: Create wallet
+      tags:
+      - wallets
+  /wallets/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a wallet (must be owned by authenticated user, must have
+        zero balance)
+      parameters:
+      - description: Wallet ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+      security:
+      - BearerAuth: []
+      summary: Delete wallet
+      tags:
+      - wallets
+    get:
+      consumes:
+      - application/json
+      description: Get a specific wallet by ID (must be owned by authenticated user)
+      parameters:
+      - description: Wallet ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/gin.H'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/gin.H'
+      security:
+      - BearerAuth: []
+      summary: Get wallet by ID
+      tags:
+      - wallets
+    put:
+      consumes:
+      - application/json
+      description: Update a wallet's attributes (must be owned by authenticated user)
+      parameters:
+      - description: Wallet ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+      security:
+      - BearerAuth: []
+      summary: Update wallet
+      tags:
+      - wallets
+  /wallets/balance:
+    get:
+      consumes:
+      - application/json
+      description: Get the authenticated user's wallet balance and transaction count
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/gin.H'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/gin.H'
+      security:
+      - BearerAuth: []
+      summary: Get wallet balance
+      tags:
+      - wallets
+  /wallets/deposit:
+    post:
+      consumes:
+      - application/json
+      description: Deposit funds into the authenticated user's wallet
+      parameters:
+      - description: Deposit data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/routes.DepositRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/gin.H'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/gin.H'
+      security:
+      - BearerAuth: []
+      summary: Deposit funds
+      tags:
+      - wallets
+  /wallets/transfer:
+    post:
+      consumes:
+      - application/json
+      description: Transfer funds to another user's wallet by email. Requires Idempotency-Key
+        header for safe retries.
+      parameters:
+      - description: Idempotency key for safe retries
+        in: header
+        name: Idempotency-Key
+        type: string
+      - description: Transfer data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/routes.TransferRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/gin.H'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/gin.H'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/gin.H'
+      security:
+      - BearerAuth: []
+      summary: Transfer funds
+      tags:
+      - wallets
+  /blog/posts:
+    get:
+      consumes:
+      - application/json
+      description: Get all published blog posts with pagination, category filter, and search
+      parameters:
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Items per page
+        in: query
+        name: limit
+        type: integer
+      - description: Category filter
+        in: query
+        name: category
+        type: string
+      - description: Search query
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+      summary: List blog posts
+      tags:
+      - blog
+  /blog/posts/{slug}:
+    get:
+      consumes:
+      - application/json
+      description: Get a single blog post by slug with comments and related posts
+      parameters:
+      - description: Post slug
+        in: path
+        name: slug
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/gin.H'
+      summary: Get blog post by slug
+      tags:
+      - blog
+  /blog/posts/{slug}/comments:
+    get:
+      consumes:
+      - application/json
+      description: Get approved comments for a blog post with pagination
+      parameters:
+      - description: Post slug
+        in: path
+        name: slug
+        required: true
+        type: string
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Items per page
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+      summary: List blog post comments
+      tags:
+      - blog
+    post:
+      consumes:
+      - application/json
+      description: Add a comment to a blog post (pending approval)
+      parameters:
+      - description: Post slug
+        in: path
+        name: slug
+        required: true
+        type: string
+      - description: Comment data
+        in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          properties:
+            name:
+              type: string
+            email:
+              type: string
+            content:
+              type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/gin.H'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/gin.H'
+      summary: Add blog comment
+      tags:
+      - blog
+  /blog/categories:
+    get:
+      consumes:
+      - application/json
+      description: Get all blog categories
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: array
+            items:
+              type: object
+      summary: List blog categories
+      tags:
+      - blog
+  /blog/tags:
+    get:
+      consumes:
+      - application/json
+      description: Get all blog tags
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: array
+            items:
+              type: object
+      summary: List blog tags
+      tags:
+      - blog
+  /blog/comments/stats:
+    get:
+      consumes:
+      - application/json
+      description: Get blog comment statistics
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+      summary: Get comment statistics
+      tags:
+      - blog
+  /cron/status:
+    get:
+      consumes:
+      - application/json
+      description: Get cron job status and schedule information
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+      summary: Get cron status
+      tags:
+      - cron
+  /cron/execute/{job}:
+    post:
+      consumes:
+      - application/json
+      description: Execute a specific cron job manually
+      parameters:
+      - description: Job name
+        in: path
+        name: job
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/gin.H'
+      summary: Execute cron job
+      tags:
+      - cron
+  /cron/setup:
+    post:
+      consumes:
+      - application/json
+      description: Setup and start all scheduled cron jobs
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+      summary: Setup cron jobs
+      tags:
+      - cron
+  /cron/remove:
+    delete:
+      consumes:
+      - application/json
+      description: Stop and remove all scheduled cron jobs
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/gin.H'
+      summary: Remove cron jobs
+      tags:
+      - cron
+  /cron/comments/stats:
+    get:
+      consumes:
+      - application/json
+      description: Get comment processing statistics
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+      summary: Get comment stats
+      tags:
+      - cron
+  /cron/backup/stats:
+    get:
+      consumes:
+      - application/json
+      description: Get backup statistics from cron service
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/gin.H'
+      summary: Get backup stats from cron
+      tags:
+      - cron
+securityDefinitions:
+  BearerAuth:
+    description: Enter the bearer token string with the "Bearer " prefix, e.g. "Bearer
+      eyJhbGciOiJIUzI1NiIs..."
+    in: header
+    name: Authorization
+    type: apiKey
 swagger: "2.0"

@@ -64,6 +64,16 @@ func SetupUserRoutes(router *gin.RouterGroup) {
 }
 
 // searchUsers searches for users by username or email
+// @Summary Search users
+// @Description Search for users by username or email (authenticated users only)
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param q query string true "Search query"
+// @Success 200 {array} gin.H
+// @Failure 400 {object} gin.H
+// @Security BearerAuth
+// @Router /users/search [get]
 func searchUsers(c *gin.Context) {
 	query := c.Query("q")
 	if query == "" {
@@ -111,6 +121,17 @@ func searchUsers(c *gin.Context) {
 }
 
 // createUser creates a new user (admin only)
+// @Summary Create user
+// @Description Create a new user account (admin only)
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param body body object true "User creation data"
+// @Success 201 {object} gin.H
+// @Failure 400 {object} gin.H
+// @Failure 403 {object} gin.H
+// @Security BearerAuth
+// @Router /users [post]
 func createUser(c *gin.Context) {
 	// Get current user from context
 	user, exists := c.Get("user")
@@ -173,6 +194,15 @@ func createUser(c *gin.Context) {
 }
 
 // getUsers gets all users (admin only)
+// @Summary List users
+// @Description Get all users with pagination (admin only)
+// @Tags users
+// @Accept json
+// @Produce json
+// @Success 200 {array} gin.H
+// @Failure 403 {object} gin.H
+// @Security BearerAuth
+// @Router /users [get]
 func getUsers(c *gin.Context) {
 	// Get current user from context
 	user, exists := c.Get("user")
@@ -231,6 +261,17 @@ type DeleteAccountRequest struct {
 }
 
 // deleteCurrentUserAccount deletes the current user's account
+// @Summary Delete own account
+// @Description Delete the authenticated user's own account after password verification
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param body body DeleteAccountRequest true "Account deletion confirmation"
+// @Success 200 {object} gin.H
+// @Failure 400 {object} gin.H
+// @Failure 401 {object} gin.H
+// @Security BearerAuth
+// @Router /users/account [delete]
 func deleteCurrentUserAccount(c *gin.Context) {
 	var req DeleteAccountRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -342,6 +383,17 @@ func deleteCurrentUserAccount(c *gin.Context) {
 }
 
 // getUser gets a specific user (admin only)
+// @Summary Get user by ID
+// @Description Get a specific user by ID (admin only)
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param id path string true "User ID"
+// @Success 200 {object} gin.H
+// @Failure 403 {object} gin.H
+// @Failure 404 {object} gin.H
+// @Security BearerAuth
+// @Router /users/{id} [get]
 func getUser(c *gin.Context) {
 	// Get current user from context
 	user, exists := c.Get("user")
@@ -380,6 +432,19 @@ func getUser(c *gin.Context) {
 }
 
 // updateUser updates a user (admin only)
+// @Summary Update user
+// @Description Update a user's attributes (admin only)
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param id path string true "User ID"
+// @Param body body object true "User update data"
+// @Success 200 {object} gin.H
+// @Failure 400 {object} gin.H
+// @Failure 403 {object} gin.H
+// @Failure 404 {object} gin.H
+// @Security BearerAuth
+// @Router /users/{id} [put]
 func updateUser(c *gin.Context) {
 	// Get current user from context
 	user, exists := c.Get("user")
@@ -501,6 +566,17 @@ func updateUser(c *gin.Context) {
 }
 
 // deleteUser deletes a user (admin only)
+// @Summary Delete user
+// @Description Delete a user account (admin only)
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param id path string true "User ID"
+// @Success 200 {object} gin.H
+// @Failure 403 {object} gin.H
+// @Failure 404 {object} gin.H
+// @Security BearerAuth
+// @Router /users/{id} [delete]
 func deleteUser(c *gin.Context) {
 	// Get current user from context
 	user, exists := c.Get("user")
