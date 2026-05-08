@@ -3,7 +3,6 @@ package routes
 import (
 	"net/http"
 
-	"securewallet/internal/config"
 	"securewallet/internal/middleware"
 	"securewallet/internal/models"
 	"securewallet/internal/services"
@@ -55,7 +54,7 @@ func enable2FA(c *gin.Context) {
 	}
 
 	currentUser := user.(*models.User)
-	db := config.GetDB()
+	db := middleware.DefaultDB(c)
 
 	var userData models.User
 	if err := db.First(&userData, currentUser.ID).Error; err != nil {
@@ -127,7 +126,7 @@ func disable2FA(c *gin.Context) {
 	}
 
 	currentUser := user.(*models.User)
-	db := config.GetDB()
+	db := middleware.DefaultDB(c)
 
 	var userData models.User
 	if err := db.First(&userData, currentUser.ID).Error; err != nil {
@@ -192,7 +191,7 @@ func verify2FA(c *gin.Context) {
 	}
 
 	currentUser := user.(*models.User)
-	db := config.GetDB()
+	db := middleware.DefaultDB(c)
 
 	var userData models.User
 	if err := db.First(&userData, currentUser.ID).Error; err != nil {
@@ -234,7 +233,7 @@ func get2FAStatus(c *gin.Context) {
 	}
 
 	currentUser := user.(*models.User)
-	db := config.GetDB()
+	db := middleware.DefaultDB(c)
 
 	var userData models.User
 	if err := db.First(&userData, currentUser.ID).Error; err != nil {
@@ -290,7 +289,7 @@ func generateRecoveryCodes(c *gin.Context) {
 	}
 
 	currentUser := user.(*models.User)
-	db := config.GetDB()
+	db := middleware.DefaultDB(c)
 
 	var userData models.User
 	if err := db.First(&userData, currentUser.ID).Error; err != nil {
@@ -342,7 +341,7 @@ func getRecoveryCodes(c *gin.Context) {
 	}
 
 	currentUser := user.(*models.User)
-	db := config.GetDB()
+	db := middleware.DefaultDB(c)
 
 	var userData models.User
 	if err := db.First(&userData, currentUser.ID).Error; err != nil {

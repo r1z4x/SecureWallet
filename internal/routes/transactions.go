@@ -4,7 +4,6 @@ import (
 	"net/http"
 	"strconv"
 
-	"securewallet/internal/config"
 	"securewallet/internal/middleware"
 	"securewallet/internal/models"
 
@@ -15,6 +14,7 @@ import (
 func SetupTransactionRoutes(router *gin.RouterGroup) {
 	transactions := router.Group("/transactions")
 	transactions.Use(middleware.AuthMiddleware())
+	transactions.Use(middleware.ShardMiddleware())
 	{
 		transactions.GET("", middleware.RequirePermission(models.PermTransferRead), getTransactions)
 		transactions.GET("/:id", middleware.RequirePermission(models.PermTransferRead), getTransaction)
@@ -44,7 +44,7 @@ func getTransactions(c *gin.Context) {
 	}
 
 	currentUser := user.(*models.User)
-	db := config.GetDB()
+	db := middleware.DB(c)
 
 	// Get user's wallet
 	var userWallet models.Wallet

@@ -76,8 +76,8 @@ type transferService struct {
 	db *gorm.DB
 }
 
-func NewTransferService() TransferService {
-	return &transferService{db: config.GetDB()}
+func NewTransferService(db *gorm.DB) TransferService {
+	return &transferService{db: db}
 }
 
 func (s *transferService) CalculateFee(amount float64) float64 {
@@ -268,8 +268,9 @@ func lockWalletByUserID(tx *gorm.DB, userID uuid.UUID) (*models.Wallet, error) {
 }
 
 func getUserByEmail(tx *gorm.DB, email string) (*models.User, error) {
+	defaultDB := config.GetShardManager().GetDefaultDB()
 	var user models.User
-	if err := tx.Where("email = ?", email).First(&user).Error; err != nil {
+	if err := defaultDB.Where("email = ?", email).First(&user).Error; err != nil {
 		return nil, err
 	}
 	return &user, nil

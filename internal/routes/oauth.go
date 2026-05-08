@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"time"
 
-	"securewallet/internal/config"
 	"securewallet/internal/middleware"
 	"securewallet/internal/models"
 	"securewallet/internal/services"
@@ -196,7 +195,7 @@ func linkOAuthAccount(c *gin.Context) {
 		return
 	}
 
-	db := config.GetDB()
+	db := middleware.DefaultDB(c)
 	var provider models.OAuthProvider
 	if err := db.Where("name = ?", req.ProviderName).First(&provider).Error; err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Provider not found"})
@@ -269,7 +268,7 @@ func unlinkOAuthAccount(c *gin.Context) {
 	}
 
 	currentUser := user.(*models.User)
-	db := config.GetDB()
+	db := middleware.DefaultDB(c)
 
 	// Check if user has a password set (must have at least one login method)
 	if currentUser.PasswordHash == "" {

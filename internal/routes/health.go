@@ -3,6 +3,7 @@ package routes
 import (
 	"net/http"
 
+	"securewallet/internal/config"
 	"securewallet/internal/services"
 
 	"github.com/gin-gonic/gin"
@@ -14,6 +15,7 @@ func SetupHealthRoutes(r *gin.Engine) {
 	r.GET("/health/ready", handleReadiness)
 	r.GET("/health/heartbeat", handleHeartbeat)
 	r.GET("/health/system", handleSystemInfo)
+	r.GET("/health/shards", handleShardHealth)
 }
 
 // @Summary Liveness probe
@@ -82,4 +84,22 @@ func handleLegacyHealth(c *gin.Context) {
 func handleSystemInfo(c *gin.Context) {
 	info := services.SystemInfo()
 	c.JSON(http.StatusOK, info)
+}
+
+// @Summary Shard health
+// @Description Returns per-shard metrics including query counts, latency percentiles, and active alerts.
+// @Tags health
+// @Produce json
+// @Success 200 {object} config.ShardHealth
+// @Router /health/shards [get]
+func handleShardHealth(c *gin.Context) {
+	monitor := config.GetShardMonitor()
+	if monitor == nil {
+		c.JSON(http.StatusOK, config.ShardHealth{
+			Mode:       "single",
+			ShardCount: 1,
+		})
+		return
+	}
+	c.JSON(http.StatusOK, monitor.Health())
 }

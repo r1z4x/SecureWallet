@@ -8,7 +8,6 @@ import (
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 
-	"securewallet/internal/config"
 	"securewallet/internal/models"
 
 	"github.com/gin-gonic/gin"
@@ -43,8 +42,7 @@ func IdempotencyMiddleware(operation string) gin.HandlerFunc {
 			return
 		}
 
-	
-		db := config.GetDB()
+		db := DB(c)
 
 		// Check if idempotency record exists
 		var existingRecord models.IdempotencyRecord

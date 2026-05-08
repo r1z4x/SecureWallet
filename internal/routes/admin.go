@@ -2,7 +2,6 @@ package routes
 
 import (
 	"net/http"
-	"securewallet/internal/config"
 	"securewallet/internal/middleware"
 	"securewallet/internal/models"
 	"strconv"
@@ -69,7 +68,7 @@ func getAdminUsers(c *gin.Context) {
 // @Security BearerAuth
 // @Router /admin/transactions [get]
 func getAdminTransactions(c *gin.Context) {
-	db := config.GetDB()
+	db := middleware.DefaultDB(c)
 
 	// Get limit parameter
 	limitStr := c.Query("limit")
@@ -235,7 +234,7 @@ func saveSystemSettings(c *gin.Context) {
 // @Security BearerAuth
 // @Router /admin/support/tickets [get]
 func getAdminSupportTickets(c *gin.Context) {
-	db := config.GetDB()
+	db := middleware.DefaultDB(c)
 
 	var tickets []models.SupportTicket
 	if err := db.Preload("User").Order("created_at DESC").Find(&tickets).Error; err != nil {
@@ -400,7 +399,7 @@ func replyToTicket(c *gin.Context) {
 		return
 	}
 
-	db := config.GetDB()
+	db := middleware.DefaultDB(c)
 
 	// Check if ticket exists in database
 	var ticket models.SupportTicket
@@ -475,7 +474,7 @@ func resolveTicket(c *gin.Context) {
 		return
 	}
 
-	db := config.GetDB()
+	db := middleware.DefaultDB(c)
 
 	// Check if ticket exists in database
 	var ticket models.SupportTicket

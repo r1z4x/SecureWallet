@@ -59,6 +59,14 @@ func main() {
 		log.Fatal("Failed to initialize database:", err)
 	}
 
+	// Initialize shard routing (multi-DB partitioning by user_id hash)
+	if err := config.InitShards(); err != nil {
+		log.Fatal("Failed to initialize shard routing:", err)
+	}
+
+	// Initialize shard monitor (alert on uneven usage and latency spikes)
+	config.InitShardMonitor().Start()
+
 	// Initialize services
 	services.InitServices()
 
